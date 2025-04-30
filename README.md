@@ -28,7 +28,7 @@ Designed to assist both beginners and experienced users in analyzing chromatin a
 
 #### Step 1: Clone the repository (Recommended) :
 ```bash
-git clone https://github.com/MPrince2703/CHROMACS_V1.git
+git clone https://github.com/epigen-bioinfolab/CHROMACS_V1.git
 cd CHROMACS_V1
 ```
 
