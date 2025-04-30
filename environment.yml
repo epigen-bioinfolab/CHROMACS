@@ -1,0 +1,44 @@
+name: chromacs
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python
+  - r-base
+  - r-biocmanager
+  - fontconfig
+
+  # Bioconductor
+  - bioconductor-chipseeker
+  - bioconductor-diffbind
+  - bioconductor-genomicfeatures
+  - bioconductor-genomicranges
+  - bioconductor-rtracklayer
+  - bioconductor-clusterprofiler
+  - bioconductor-txdbmaker
+  - bioconductor-biomart
+
+  # CRAN
+  - r-ggplot2
+  - r-gridextra
+  - r-r.utils
+  - r-xml2                 
+
+  # Python
+  - pandas
+  - pyyaml
+  - tk=8.6.13=xft_h2e05e87_1                  
+
+  # CLI Tools
+  - bowtie2
+  - samtools
+  - fastqc
+  - multiqc
+  - trim-galore
+  - macs3
+  - genrich
+  - bedtools
+  - deeptools
+  - aria2
+  - pip
