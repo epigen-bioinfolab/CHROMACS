@@ -35,7 +35,7 @@ cd CHROMACS_V1
 #### Step 1 (alternate): Download as ZIP
 If you download the zip file from the repository, ensure to avoid the above step
 
-1. Go to https://github.com/MPrince2703/CHROMACS_V1
+1. Go to https://github.com/epigen-bioinfolab/CHROMACS_V1
 2. Click the green Code button → Download ZIP
 3. Extract the ZIP file.
 The folder will be named CHROMACS_V1-main. Configure to the CHROMACS_V1-main
