@@ -19,11 +19,10 @@ def load_custom_font(root):
 
     if os.path.exists(font_path):
         try:
-            # Create a new font object and use it
             roboto_font = tkFont.Font(root=root, family="Roboto", size=10)
-
             print(f"Successfully loaded custom font: {font_path}")
             return roboto_font
+
         except Exception as e:
             print(f"Error loading custom font: {e}")
             return None
@@ -56,7 +55,7 @@ class ATACSeqPipeline:
             "step2": {},  # Trim Galore (and sample names)
             "step3": {},  # Ref genome for alignment, indexing, and sorting
             "step4": {},  # Peak Calling (Genrich or MACS3)
-            "step5": {}  # Peak Annotation
+            "step5": {}  # Peak Annotation, plus diffbind
         }
 
         # Creating a Notebook widget for the wizard steps
@@ -196,7 +195,7 @@ class ATACSeqPipeline:
         self.sample_listbox.delete(0, tk.END)
         directory = self.raw_data_dir.get()
         if directory:
-            # Find all FASTQ files with both extensions
+            # Find all FASTQ files with both extensions (*fastq.gz and *fq.gz)
             fastq_files = glob.glob(os.path.join(directory, "*.fastq.gz")) + glob.glob(
                 os.path.join(directory, "*.fq.gz"))
             for f in sorted(fastq_files):
@@ -1379,6 +1378,25 @@ class ATACSeqPipeline:
                 genome_size = self.params["step4"].get("genome", "hs")
 
                 cmd_all = ""
+                files_to_delete = set()
+
+                # Pre-filter control files if needed
+                control_filtered_map = {}
+                for ctrl in control:
+                    control_input = f"{bam_dir}/{ctrl}.sort.bam"
+                    control_filtered = f"{bam_dir}/{ctrl}.filtered.sort.bam"
+                    control_filtered_map[ctrl] = control_filtered
+
+                    if not os.path.exists(control_filtered):
+                        self.update_output_gui(f"Filtering BAM for control sample {ctrl}...\n")
+                        try:
+                            self.filter_bam(control_input, control_filtered, blacklist_files, exclude_chr)
+                            files_to_delete.add(control_filtered)
+                        except Exception as e:
+                            self.show_error_gui(f"BAM filtering failed for control sample {ctrl}: {str(e)}")
+                            return
+
+                # Process each treated sample
                 for s in treated:
                     input_bam = f"{bam_dir}/{s}.sort.bam"
                     filtered_bam = f"{bam_dir}/{s}.filtered.sort.bam"
@@ -1386,36 +1404,36 @@ class ATACSeqPipeline:
                     self.update_output_gui(f"Filtering BAM for treated sample {s}...\n")
                     try:
                         self.filter_bam(input_bam, filtered_bam, blacklist_files, exclude_chr)
+                        files_to_delete.add(filtered_bam)
                     except Exception as e:
                         self.show_error_gui(f"BAM filtering failed for sample {s}: {str(e)}")
                         return
 
                     if control:
                         for ctrl in control:
-                            control_input = f"{bam_dir}/{ctrl}.sort.bam"
-                            control_filtered = f"{bam_dir}/{ctrl}.filtered.sort.bam"
-
-                            self.update_output_gui(f"Filtering BAM for control sample {ctrl}...\n")
-                            try:
-                                self.filter_bam(control_input, control_filtered, blacklist_files, exclude_chr)
-                            except Exception as e:
-                                self.show_error_gui(f"BAM filtering failed for control sample {ctrl}: {str(e)}")
-                                return
-
+                            control_filtered = control_filtered_map[ctrl]
                             output_prefix = f"{peak_files}/{s}_{ctrl}.macs3.peak"
                             cmd = (f"macs3 callpeak -f BAMPE --call-summits -t {filtered_bam} -c {control_filtered} "
-                                   f"-g {genome_size} -n {output_prefix} -B -q {max_q} && rm {filtered_bam} {control_filtered}")
+                                   f"-g {genome_size} -n {output_prefix} -B -q {max_q}")
                             cmd_all += cmd + " && "
                     else:
                         output_prefix = f"{peak_files}/{s}.macs3.peak"
                         cmd = (f"macs3 callpeak -f BAMPE --call-summits -t {filtered_bam} "
-                               f"-g {genome_size} -n {output_prefix} -B -q {max_q} && rm {filtered_bam}")
+                               f"-g {genome_size} -n {output_prefix} -B -q {max_q}")
                         cmd_all += cmd + " && "
 
                 cmd_all = cmd_all.rstrip(" && ")
                 self.update_output_gui("Running Step 8: MACS3 Peak Calling...\n")
                 if not self.run_blocking_command(cmd_all):
                     return
+
+                # Safe cleanup
+                self.update_output_gui("Cleaning up temporary filtered BAM files...\n")
+                for f in files_to_delete:
+                    try:
+                        os.remove(f)
+                    except Exception as e:
+                        self.update_output_gui(f"Warning: Could not delete file {f}: {str(e)}\n")
 
             # Step 9: Peak Annotation
             r_script_path = resource_filename('chromacs',
