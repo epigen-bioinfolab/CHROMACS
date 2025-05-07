@@ -1598,12 +1598,15 @@ class ATACSeqPipeline:
         for idx in self.peak_listbox.curselection():
             peak_filename = self.peak_listbox.get(idx)
             # Extract SampleID from peak filename
-            sample_id = os.path.basename(peak_filename).split('.')[0]
+            sample_id_with_suffix = os.path.basename(peak_filename).split('.')[0]
 
-            # Determine PeakCaller based on filename
+            # Handle MACS3 filenames have _SRR[control]... suffix
             if 'macs3' in peak_filename.lower():
+                # For MACS3, take only the first part before underscore
+                sample_id = sample_id_with_suffix.split('_')[0]
                 peak_caller = 'narrow'
             else:  # Genrich
+                sample_id = sample_id_with_suffix
                 peak_caller = 'bed'
 
             # Get user-assigned parameters
