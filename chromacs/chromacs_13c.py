@@ -163,7 +163,7 @@ class ATACSeqPipeline:
         self.sample_listbox.config(yscrollcommand=scrollbar.set)
 
         # Save button
-        tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="green").grid(
+        tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="yellow yellow green").grid(
             row=6, column=0, columnspan=3, pady=10)
 
 
@@ -290,8 +290,8 @@ class ATACSeqPipeline:
                  font=(self.roboto_font, 9, 'italic')
                  ).grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
-        tk.Button(self.step2_frame, text="Save & Next", command=self.save_step2_next, bg="green").grid(row=7, column=1, pady=5)
-        tk.Button(self.step2_frame, text="Back", command=lambda: self.notebook.select(0), bg= 'red').grid(row=7, column=0, pady=5)
+        tk.Button(self.step2_frame, text="Save & Next", command=self.save_step2_next, bg="yellow yellow green").grid(row=7, column=1, pady=5)
+        tk.Button(self.step2_frame, text="Back", command=lambda: self.notebook.select(0), bg= 'salmon').grid(row=7, column=0, pady=5)
 
 
         # helper functions of step2_ui
@@ -461,14 +461,14 @@ class ATACSeqPipeline:
         self.genome_menu.grid(row=0, column=1, padx=10, pady=5)
 
         # Reference status indicator
-        self.ref_status = tk.Label(self.step3_frame, text="", fg="red")
+        self.ref_status = tk.Label(self.step3_frame, text="", fg="salmon")
         self.ref_status.grid(row=1, column=1, sticky="w", padx=10, pady=5)
 
         # Buttons
         tk.Button(self.step3_frame, text="Check Reference", command=self.check_reference, bg="gray").grid(row=2, column=1, pady=5)
-        tk.Button(self.step3_frame, text="Save & Next", command=self.save_step3_next, bg="green").grid(row=3, column=1,
+        tk.Button(self.step3_frame, text="Save & Next", command=self.save_step3_next, bg="yellow yellow green").grid(row=3, column=1,
                                                                                                    pady=5)
-        tk.Button(self.step3_frame, text="Back", command=lambda: self.notebook.select(1), bg="red").grid(row=3, column=0,
+        tk.Button(self.step3_frame, text="Back", command=lambda: self.notebook.select(1), bg="salmon").grid(row=3, column=0,
                                                                                                      pady=5)
 
     def check_reference(self):
@@ -492,7 +492,7 @@ class ATACSeqPipeline:
         index_exists = all(os.path.exists(f) for f in index_files)
 
         if index_exists:
-            self.ref_status.config(text="Reference index found!", fg="green")
+            self.ref_status.config(text="Reference index found!", fg="yellow yellow green")
             return True
         else:
             status_messages = []
@@ -559,10 +559,10 @@ class ATACSeqPipeline:
                                                                                                              column=1,
                                                                                                              sticky="w",
                                                                                                              padx=10)
-        tk.Button(self.step4_frame, text="Save & Next", command=self.save_step4_next, bg="green").grid(row=3, column=2,
+        tk.Button(self.step4_frame, text="Save & Next", command=self.save_step4_next, bg="yellow yellow green").grid(row=3, column=2,
                                                                                                       columnspan=3,
                                                                                                       pady=10)
-        tk.Button(self.step4_frame, text="Back", command=lambda: self.notebook.select(2), bg='red').grid(row=3, column=0, pady=10)
+        tk.Button(self.step4_frame, text="Back", command=lambda: self.notebook.select(2), bg='salmon').grid(row=3, column=0, pady=10)
 
     def save_step4_next(self):
         self.params["step4"]["peak_caller"] = self.peak_caller_choice.get().strip()
@@ -698,10 +698,10 @@ class ATACSeqPipeline:
             self.step4_frame,
             text="Save and Next",
             command=self.save_step4a_settings,
-            bg="green"
+            bg="yellow yellow green"
         )
         self.save_button.grid(row=12, column=0, columnspan=3, pady=10)
-        tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='red').grid(row=12,
+        tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='salmon').grid(row=12,
                                                                                                         column=0,
                                                                                                         pady=10)
 
@@ -912,9 +912,9 @@ class ATACSeqPipeline:
         self.macs3_genome_entry.config(state='normal')
         self.macs3_genome_entry.insert(0, genome_size)
         self.macs3_genome_entry.config(state='readonly')
-        tk.Button(self.step4_frame, text="Save and Next", command=self.save_step4b_settings, bg="green").grid(
+        tk.Button(self.step4_frame, text="Save and Next", command=self.save_step4b_settings, bg="yellow green").grid(
             row=9, column=0, columnspan=3, pady=10)
-        tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='red').grid(row=9,
+        tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='salmon').grid(row=9,
                                                                                                         column=0,
                                                                                                         pady=10)
 
@@ -959,6 +959,8 @@ class ATACSeqPipeline:
     def setup_step5_ui(self):
         frame = self.step5_frame
         instruction_1= (
+            "Select the Run pipeline to generate the peak files along with their annotation. This might take significant time on the first run, as genome reference will be built and indexed!\n"
+            "FastQC, MultiQC, Trimmed data, Aligned BAM files, BAM coverage files will be saved automatically in your predefined base output directory (assigned in step1)"
             "Peak Files will be called and saved in \'peak_files\' directory within the base output directory assigned by the user in step 1\n"
             "The annotated peaks will be saved in 'annotated_dir' directory within the \'peak_files\' directory"
         )
@@ -966,8 +968,8 @@ class ATACSeqPipeline:
                  font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, columnspan=6, padx=10, pady=5, sticky="w")
 
         # Buttons
-        tk.Button(frame, text="Back", command=lambda: self.notebook.select(3), bg='red').grid(row=3, column=0, pady=10)
-        tk.Button(frame, text="Run Pipeline", command=self.run_pipeline, bg="green").grid(row=4, column=0, pady=10)
+        tk.Button(frame, text="Back", command=lambda: self.notebook.select(3), bg='salmon').grid(row=3, column=0, pady=10)
+        tk.Button(frame, text="Run Pipeline", command=self.run_pipeline, bg="yellow green").grid(row=4, column=0, pady=10)
 
         # Adds DiffBind button
         self.diffbind_btn = tk.Button(
@@ -1510,7 +1512,7 @@ class ATACSeqPipeline:
 
         # Run button
         tk.Button(self.diffbind_window, text="Run DiffBind",
-                  command=self.validate_and_run_diffbind, bg="green").grid(row=3, column=1, pady=10)
+                  command=self.validate_and_run_diffbind, bg="yellow green").grid(row=3, column=1, pady=10)
 
         # Initialize metadata stores
         self.conditions = {}
