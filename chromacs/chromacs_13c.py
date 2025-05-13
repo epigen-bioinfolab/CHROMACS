@@ -76,7 +76,7 @@ class ATACSeqPipeline:
         self.notebook.add(self.step4_frame, text="Step 4")
         self.notebook.add(self.step5_frame, text="Step 5")
 
-        # Disabling tabs for steps that are not yet completed (keep or remove it??)
+        # Disabling tabs for steps that are not yet completed
 
         self.notebook.tab(1, state="disabled")
         self.notebook.tab(2, state="disabled")
@@ -163,8 +163,9 @@ class ATACSeqPipeline:
         self.sample_listbox.config(yscrollcommand=scrollbar.set)
 
         # Save button
-        tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="yellow yellow green").grid(
+        tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="yellow green").grid(
             row=6, column=0, columnspan=3, pady=10)
+
 
 
         # helper functions of step1_ui
@@ -290,7 +291,7 @@ class ATACSeqPipeline:
                  font=(self.roboto_font, 9, 'italic')
                  ).grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
-        tk.Button(self.step2_frame, text="Save & Next", command=self.save_step2_next, bg="yellow yellow green").grid(row=7, column=1, pady=5)
+        tk.Button(self.step2_frame, text="Save & Next", command=self.save_step2_next, bg="yellow green").grid(row=7, column=1, pady=5)
         tk.Button(self.step2_frame, text="Back", command=lambda: self.notebook.select(0), bg= 'salmon').grid(row=7, column=0, pady=5)
 
 
@@ -466,7 +467,7 @@ class ATACSeqPipeline:
 
         # Buttons
         tk.Button(self.step3_frame, text="Check Reference", command=self.check_reference, bg="gray").grid(row=2, column=1, pady=5)
-        tk.Button(self.step3_frame, text="Save & Next", command=self.save_step3_next, bg="yellow yellow green").grid(row=3, column=1,
+        tk.Button(self.step3_frame, text="Save & Next", command=self.save_step3_next, bg="yellow green").grid(row=3, column=1,
                                                                                                    pady=5)
         tk.Button(self.step3_frame, text="Back", command=lambda: self.notebook.select(1), bg="salmon").grid(row=3, column=0,
                                                                                                      pady=5)
@@ -480,7 +481,7 @@ class ATACSeqPipeline:
         genome_info = self.genome_map[selected]
 
         # Use the script's directory, not __file__
-        script_dir = os.path.abspath(os.path.dirname(sys.argv[0]))
+        script_dir = os.path.dirname(os.path.abspath(__file__))
         ref_dir = os.path.join(script_dir, "ref_genome", genome_info["bowtie_ref"])
 
         bt2_base = os.path.join(ref_dir, genome_info["bowtie_ref"])
@@ -492,7 +493,7 @@ class ATACSeqPipeline:
         index_exists = all(os.path.exists(f) for f in index_files)
 
         if index_exists:
-            self.ref_status.config(text="Reference index found!", fg="yellow yellow green")
+            self.ref_status.config(text="Reference index found!", fg="yellow green")
             return True
         else:
             status_messages = []
@@ -525,11 +526,9 @@ class ATACSeqPipeline:
         selected = self.genome_var.get()
         genome_info = self.genome_map[selected]
 
-        ref_dir = os.path.join(os.path.dirname(__file__),
-                               "ref_genome",
-                               genome_info["bowtie_ref"])
-        bt2_base = os.path.join(ref_dir,
-                                genome_info["bowtie_ref"])
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        ref_dir = os.path.join(script_dir, "ref_genome", genome_info["bowtie_ref"])
+        bt2_base = os.path.join(ref_dir, genome_info["bowtie_ref"])
 
         self.params["step3"].update({
             "genome_version": genome_info["bowtie_ref"],
@@ -559,7 +558,7 @@ class ATACSeqPipeline:
                                                                                                              column=1,
                                                                                                              sticky="w",
                                                                                                              padx=10)
-        tk.Button(self.step4_frame, text="Save & Next", command=self.save_step4_next, bg="yellow yellow green").grid(row=3, column=2,
+        tk.Button(self.step4_frame, text="Save & Next", command=self.save_step4_next, bg="yellow green").grid(row=3, column=2,
                                                                                                       columnspan=3,
                                                                                                       pady=10)
         tk.Button(self.step4_frame, text="Back", command=lambda: self.notebook.select(2), bg='salmon').grid(row=3, column=0, pady=10)
@@ -698,7 +697,7 @@ class ATACSeqPipeline:
             self.step4_frame,
             text="Save and Next",
             command=self.save_step4a_settings,
-            bg="yellow yellow green"
+            bg="yellow green"
         )
         self.save_button.grid(row=12, column=0, columnspan=3, pady=10)
         tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='salmon').grid(row=12,
@@ -958,27 +957,56 @@ class ATACSeqPipeline:
 
     def setup_step5_ui(self):
         frame = self.step5_frame
-        instruction_1= (
-            "Select the Run pipeline to generate the peak files along with their annotation. This might take significant time on the first run, as genome reference will be built and indexed!\n"
-            "FastQC, MultiQC, Trimmed data, Aligned BAM files, BAM coverage files will be saved automatically in your predefined base output directory (assigned in step1)"
-            "Peak Files will be called and saved in \'peak_files\' directory within the base output directory assigned by the user in step 1\n"
-            "The annotated peaks will be saved in 'annotated_dir' directory within the \'peak_files\' directory"
+
+        # Configure grid for responsiveness
+        for i in range(3):  # 3 columns: left spacer, center, right spacer
+            frame.grid_columnconfigure(i, weight=1)
+        frame.grid_rowconfigure(0, weight=1)
+
+        # Instruction label (centered)
+        instruction_1 = (
+            "Click 'Run Pipeline' to generate peak files with annotation.\n"
+            "The first run may take longer due to reference genome setup and indexing.\n\n"
+            "- FastQC, MultiQC, Trimmed data, Aligned BAM files, and Coverage files will be stored under the base output directory.\n"
+            "- Peak files will be saved in the 'peak_files' folder.\n"
+            "- Annotated peaks will be in 'Annotated_Peaks' inside 'peak_files'."
         )
-        tk.Label(frame, text=instruction_1, wraplength=600, justify=tk.LEFT, anchor="w",
-                 font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, columnspan=6, padx=10, pady=5, sticky="w")
+        tk.Label(
+            frame, text=instruction_1, wraplength=800, justify=tk.LEFT,
+            anchor="center", font=(self.roboto_font, 10, 'bold')
+        ).grid(row=0, column=1, padx=20, pady=10, sticky="ew")
 
-        # Buttons
-        tk.Button(frame, text="Back", command=lambda: self.notebook.select(3), bg='salmon').grid(row=3, column=0, pady=10)
-        tk.Button(frame, text="Run Pipeline", command=self.run_pipeline, bg="yellow green").grid(row=4, column=0, pady=10)
+        # Button row: Back and Run Pipeline (centered)
+        button_frame = tk.Frame(frame)
+        button_frame.grid(row=1, column=1, pady=10)
 
-        # Adds DiffBind button
+        tk.Button(button_frame, text="Back", command=lambda: self.notebook.select(3), bg='salmon'
+                  ).pack(side=tk.LEFT, padx=20)
+        tk.Button(button_frame, text="Run Pipeline", command=self.run_pipeline, bg="yellow green"
+                  ).pack(side=tk.LEFT, padx=20)
+
+        # DiffBind info (centered and responsive)
+        diffbind_info = (
+            "After peak calling is complete, you can run DiffBind to perform differential binding analysis "
+            "based on experimental conditions."
+        )
+        tk.Label(
+            frame, text=diffbind_info, wraplength=800, justify=tk.LEFT,
+            anchor="center", font=(self.roboto_font, 9, 'italic')
+        ).grid(row=2, column=1, padx=20, pady=(20, 5), sticky="ew")
+
+        # DiffBind button (centered)
+        diffbind_btn_frame = tk.Frame(frame)
+        diffbind_btn_frame.grid(row=3, column=1, pady=10)
         self.diffbind_btn = tk.Button(
-            self.step5_frame,
-            text="Run DiffBind Analysis", bg= 'orange',
-            command=self.launch_diffbind_config,
-            state=tk.NORMAL  # or keep it DISABLED till pipeline finishes??
+            diffbind_btn_frame, text="Run DiffBind Analysis", bg='orange',
+            command=self.launch_diffbind_config, state=tk.NORMAL
         )
-        self.diffbind_btn.grid(row=5, column=0, pady=10)
+        self.diffbind_btn.pack()
+
+        # Let rows expand if window height increases
+        for i in range(4):
+            frame.grid_rowconfigure(i, weight=1)
 
     # =================== Final Run Pipeline =================== #
 
@@ -1087,20 +1115,32 @@ class ATACSeqPipeline:
                 self.update_output_gui("Skipping Step 2: MultiQC raw data (report exists)\n")
 
             # Step 3: Trim Galore
-            # ====== Corrected Trim Galore Check ====== #
+            selected_samples = self.params["step1"].get("selected_samples")
+
+            if selected_samples is None:
+                raw_data_dir = self.params["step1"]["raw_data_dir"]
+                selected_samples = glob.glob(os.path.join(raw_data_dir, "*.fastq.gz")) + \
+                                   glob.glob(os.path.join(raw_data_dir, "*.fq.gz"))
+
             if not self.params["step2"].get("skip_trimming", False):
                 self.update_output_gui("Checking Step 3: Trim Galore...\n")
                 for sample in samples:
-                    # Directly construct expected output paths
                     output_r1 = os.path.join(trimmed_data, f"{sample}_val_1.fq.gz")
                     output_r2 = os.path.join(trimmed_data, f"{sample}_val_2.fq.gz")
 
                     if not (os.path.exists(output_r1) and os.path.exists(output_r2)):
-                        # Get original files from selected_samples
-                        sample_files = [f for f in self.params["step1"]["selected_samples"]
-                                        if sample in os.path.basename(f)]
-                        r1 = [f for f in sample_files if "_1" in os.path.basename(f)][0]
-                        r2 = [f for f in sample_files if "_2" in os.path.basename(f)][0]
+                        # Filter the list to find sample's raw read files
+                        sample_files = [f for f in selected_samples if sample in os.path.basename(f)]
+
+                        r1_list = [f for f in sample_files if "_1" in os.path.basename(f)]
+                        r2_list = [f for f in sample_files if "_2" in os.path.basename(f)]
+
+                        if not r1_list or not r2_list:
+                            self.update_output_gui(f"Warning: Could not find both pairs for sample {sample}\n")
+                            continue
+
+                        r1 = r1_list[0]
+                        r2 = r2_list[0]
 
                         self.update_output_gui(f"Running Trim Galore for {sample}...\n")
                         cmd = (f"trim_galore --basename {sample} --gzip  --cores 2 --paired "
@@ -1112,35 +1152,42 @@ class ATACSeqPipeline:
             else:
                 self.update_output_gui("Skipping Step 3: Trim Galore (User chose to use raw data)\n")
 
-            # Step 4: FastQC on trimmed data
-            self.update_output_gui("Checking Step 4: FastQC trimmed data...\n")
-            trimmed_files = []
-            for sample in samples:
-                trimmed_files.append(os.path.join(trimmed_data, f"{sample}_val_1.fq.gz"))
-                trimmed_files.append(os.path.join(trimmed_data, f"{sample}_val_2.fq.gz"))
 
-            all_trimmed_reports_exist = all(
-                os.path.exists(os.path.join(fastqc_trimmed, os.path.basename(f).replace('.fq.gz', '_fastqc.html')))
-                for f in trimmed_files
-            )
-            if not all_trimmed_reports_exist:
-                self.update_output_gui("Running Step 4: FastQC on trimmed data...\n")
-                cmd = f"fastqc -t 8 {trimmed_data}/*.fq.gz -o {fastqc_trimmed}"
-                if not self.run_blocking_command(cmd):
-                    return
+            # Step 4: FastQC on trimmed data
+            if not self.params["step2"].get("skip_trimming", False):
+                self.update_output_gui("Checking Step 4: FastQC trimmed data...\n")
+                trimmed_files = []
+                for sample in samples:
+                    trimmed_files.append(os.path.join(trimmed_data, f"{sample}_val_1.fq.gz"))
+                    trimmed_files.append(os.path.join(trimmed_data, f"{sample}_val_2.fq.gz"))
+
+                all_trimmed_reports_exist = all(
+                    os.path.exists(os.path.join(fastqc_trimmed, os.path.basename(f).replace('.fq.gz', '_fastqc.html')))
+                    for f in trimmed_files
+                )
+                if not all_trimmed_reports_exist:
+                    self.update_output_gui("Running Step 4: FastQC on trimmed data...\n")
+                    cmd = f"fastqc -t 8 {trimmed_data}/*.fq.gz -o {fastqc_trimmed}"
+                    if not self.run_blocking_command(cmd):
+                        return
+                else:
+                    self.update_output_gui("Skipping Step 4: FastQC trimmed data (reports exist)\n")
             else:
-                self.update_output_gui("Skipping Step 4: FastQC trimmed data (reports exist)\n")
+                self.update_output_gui(
+                    "Skipping Steps 4 & 5: FastQC and MultiQC on trimmed data (trimming was skipped).\n")
 
             # Step 5: MultiQC on trimmed data
-            self.update_output_gui("Checking Step 5: MultiQC trimmed data...\n")
-            multiqc_report = os.path.join(multiqc_trimmed, "multiqc_report.html")
-            if not os.path.exists(multiqc_report):
-                self.update_output_gui("Running Step 5: MultiQC on trimmed data...\n")
-                cmd = f"multiqc {fastqc_trimmed} -o {multiqc_trimmed}"
-                if not self.run_blocking_command(cmd):
-                    return
-            else:
-                self.update_output_gui("Skipping Step 5: MultiQC trimmed data (report exists)\n")
+            if not self.params["step2"].get("skip_trimming", False):
+                self.update_output_gui("Checking Step 5: MultiQC trimmed data...\n")
+                multiqc_report = os.path.join(multiqc_trimmed, "multiqc_report.html")
+                if not os.path.exists(multiqc_report):
+                    self.update_output_gui("Running Step 5: MultiQC on trimmed data...\n")
+                    cmd = f"multiqc {fastqc_trimmed} -o {multiqc_trimmed}"
+                    if not self.run_blocking_command(cmd):
+                        return
+                else:
+                    self.update_output_gui("Skipping Step 5: MultiQC trimmed data (report exists)\n")
+
 
             # ====== Ensembl Reference Download and Index Build ====== #
             ensembl_release = "111"
