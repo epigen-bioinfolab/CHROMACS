@@ -64,3 +64,8 @@ chromacs
 
 - FastQC, MultiQC, Trim Galore, Bowtie2, MACS3, Genrich, ChIPseeker, DiffBind; along with their dependencies
 - Bioconda, Conda-Forge community
+
+
+## 📝 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
