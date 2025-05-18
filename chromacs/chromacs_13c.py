@@ -10,7 +10,8 @@ import re
 import pandas as pd
 import sys
 from pkg_resources import resource_filename
-
+import gzip
+import shutil
 
 # font setup
 def load_custom_font(root):
@@ -378,13 +379,6 @@ class ATACSeqPipeline:
                 "ensembl_species": "capra_hircus",
                 "ensembl_cap": "Capra_hircus",
                 "ensembl_assembly": "ARS1"
-            },
-            "Black Bengal Goat (CVASU_BBG_1.0)": {
-                "bowtie_ref": "CVASU_BBG_1.0",
-                "macs_size": "2.9e9",
-                "ensembl_species": "capra_hircus_blackbengal",
-                "ensembl_cap": "Capra_hircus_blackbengal",
-                "ensembl_assembly": "CVASU_BBG_1.0"
             },
             "Rabbit (OryCun2.0)": {
                 "bowtie_ref": "OryCun2.0",
@@ -1274,6 +1268,17 @@ class ATACSeqPipeline:
             else:
                 self.update_output_gui("GTF file already exists.\n")
 
+            # ====== Obtain TSS file ========= (associated helper function is present after this method)
+            tss_bed = os.path.join(ref_dir, f"{genome_version}_TSS.bed")
+            if not os.path.exists(tss_bed):
+                self.update_output_gui("Generating TSS BED file from GTF...\n")
+                try:
+                    self.gtf_to_tss_bed(gtf_file, tss_bed, gene_biotype="protein_coding")
+                except Exception as e:
+                    self.show_error_gui(f"Failed to create TSS BED file: {str(e)}")
+                    return
+
+
             # Step 6: Alignment and Sorting
             self.update_output_gui("Checking Step 6: Alignment...\n")
             for sample in samples:
@@ -1368,6 +1373,24 @@ class ATACSeqPipeline:
                         return
                 else:
                     self.update_output_gui(f"Skipping coverage for {sample} (file exists)\n")
+
+
+            # Create output directory for coverage profiles (associated helper function after this method)
+            coverage_profile_dir = os.path.join(normalized_coverage, "coverage_profiles")
+            os.makedirs(coverage_profile_dir, exist_ok=True)
+
+            # TSS Heatmap
+            self.update_output_gui("Generating TSS coverage profiles...\n")
+            try:
+                self.run_tss_matrix_and_heatmap(
+                    tss_bed=tss_bed,
+                    bw_dir=normalized_coverage,
+                    out_prefix=os.path.join(coverage_profile_dir, "TSS")
+                )
+            except Exception as e:
+                self.show_error_gui(f"Failed to generate TSS matrix and heatmap: {str(e)}")
+                return
+
 
             # =================== Step 8: Peak Calling (Genrich or MACS3) =================== #
 
@@ -1505,6 +1528,8 @@ class ATACSeqPipeline:
 
             self.root.after(0, self.diffbind_btn.config, {"state": tk.NORMAL})
             self.update_output_gui("\n✅ Pipeline execution complete!\n")
+            # pop-up
+            messagebox.showinfo("Pipeline Finished", "✅ All steps have completed successfully!")
 
         except Exception as e:
             self.show_error_gui(f"Pipeline failed: {str(e)}")
@@ -1534,6 +1559,109 @@ class ATACSeqPipeline:
             subprocess.run(cmd, shell=True, check=True)
         except subprocess.CalledProcessError as e:
             raise Exception(f"BAM filtering failed: {str(e)}")
+
+
+    # required for coverage matrix calculation and plotting of bigwigs
+    def gtf_to_tss_bed(
+            self,
+            gtf_file: str,
+            output_bed: str,
+            gene_biotype: str = "protein_coding",
+            allowed_chromosomes: set = None,
+            exclude_non_primary: bool = True
+    ):
+
+        def is_primary_contig(chrom: str) -> bool:
+            chrom = chrom.lower()
+            return not any(x in chrom for x in ["random", "alt", "hap", "fix", "gl", "un", "scaffold", "kb"])
+
+        with (gzip.open(gtf_file, "rt") if gtf_file.endswith(".gz") else open(gtf_file, "r")) as infile, \
+                open(output_bed, "w") as outfile:
+
+            seen_genes = set()
+
+            for line in infile:
+                if line.startswith("#"):
+                    continue
+
+                cols = line.strip().split("\t")
+                if len(cols) < 9 or cols[2].lower() != "gene":
+                    continue
+
+                chrom = cols[0]
+
+                if allowed_chromosomes:
+                    if chrom not in allowed_chromosomes:
+                        continue
+                elif exclude_non_primary and not is_primary_contig(chrom):
+                    continue
+
+                attrs = {}
+                for pair in cols[8].strip().split(";"):
+                    pair = pair.strip()
+                    if not pair:
+                        continue
+                    if "\"" in pair:
+                        key, val = pair.split(" ", 1)
+                        val = val.strip("\"")
+                    else:
+                        key, val = (pair.split("=") if "=" in pair else (pair, ""))
+                    attrs[key.strip()] = val.strip()
+
+                biotype = attrs.get("gene_biotype") or attrs.get("gene_type") or attrs.get("biotype")
+                if not biotype or biotype.lower() != gene_biotype.lower():
+                    continue
+
+                strand = cols[6]
+                start = int(cols[3])
+                end = int(cols[4])
+                tss = start if strand == "+" else end
+
+                gene_id = attrs.get("gene_id") or attrs.get("ID")
+                if gene_id in seen_genes:
+                    continue
+                seen_genes.add(gene_id)
+
+                outfile.write(f"{chrom}\t{tss - 1}\t{tss}\t{gene_id}\t.\t{strand}\n")
+
+    def run_tss_matrix_and_heatmap(self, tss_bed: str, bw_dir: str, out_prefix: str):
+
+        bw_files = glob.glob(os.path.join(bw_dir, "*.normalized.bw"))
+        if not bw_files:
+            raise RuntimeError(f"No BigWig files found in {bw_dir}")
+
+        matrix_file = f"{out_prefix}_matrix.gz"
+        cmd_mat = [
+                      "computeMatrix", "reference-point",
+                      "--referencePoint", "center",
+                      "-b", "3000", "-a", "3000",
+                      "-R", tss_bed,
+                      "-S"
+                  ] + bw_files + [
+                      "--skipZeros",
+                      "-p", "max",
+                      "-o", matrix_file
+                  ]
+        subprocess.run(cmd_mat, check=True)
+
+        heatmap_file = f"{out_prefix}_heatmap.pdf"
+        cmd_heat = [
+            "plotHeatmap",
+            "-m", matrix_file,
+            "-out", heatmap_file,
+            "--colorMap", "Reds",
+            "--heatmapHeight", "15",
+            "--heatmapWidth", "20",
+            "--xAxisLabel", "Distance from TSS (bp)",
+            "--refPointLabel", "TSS",
+            "--averageTypeSummaryPlot", "mean",
+            "--plotType", "se",
+            "--legendLocation", "best"
+        ]
+        subprocess.run(cmd_heat, check=True)
+
+        return matrix_file, heatmap_file
+
 
     # =================== DiffBind Analysis Logic =================== #
 
