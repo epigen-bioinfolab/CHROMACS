@@ -1425,17 +1425,25 @@ class ATACSeqPipeline:
             coverage_profile_dir = os.path.join(normalized_coverage, "coverage_profiles")
             os.makedirs(coverage_profile_dir, exist_ok=True)
 
-            # TSS Heatmap
-            self.update_output_gui("Generating TSS coverage profiles...\n")
-            try:
-                self.run_tss_matrix_and_heatmap(
-                    tss_bed=tss_bed,
-                    bw_dir=normalized_coverage,
-                    out_prefix=os.path.join(coverage_profile_dir, "TSS")
-                )
-            except Exception as e:
-                self.show_error_gui(f"Failed to generate TSS matrix and heatmap: {str(e)}")
-                return
+            # expected output file paths
+            tss_prefix = os.path.join(coverage_profile_dir, "TSS")
+            matrix_file = f"{tss_prefix}_matrix.gz"
+            heatmap_file = f"{tss_prefix}_heatmap.pdf"
+
+            # Check if both output files already exist
+            if os.path.exists(matrix_file) and os.path.exists(heatmap_file):
+                self.update_output_gui("TSS coverage profile and heatmap already exist. Skipping.\n")
+            else:
+                self.update_output_gui("Generating TSS coverage profiles...\n")
+                try:
+                    self.run_tss_matrix_and_heatmap(
+                        tss_bed=tss_bed,
+                        bw_dir=normalized_coverage,
+                        out_prefix=tss_prefix
+                    )
+                except Exception as e:
+                    self.show_error_gui(f"Failed to generate TSS matrix and heatmap: {str(e)}")
+                    return
 
             # =================== Step 8: Peak Calling (Genrich or MACS3) =================== #
 
@@ -1517,7 +1525,7 @@ class ATACSeqPipeline:
                     if not self.run_blocking_command(cmd):
                         return
 
-                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
+                    files_to_delete.update([fixed_bam, coord_bam])
 
                     try:
                         self.filter_bam(dedup_bam, filtered_bam, blacklist_files, exclude_chr)
@@ -1546,7 +1554,7 @@ class ATACSeqPipeline:
                     if not self.run_blocking_command(cmd):
                         return
 
-                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
+                    files_to_delete.update([fixed_bam, coord_bam])
 
                     try:
                         self.filter_bam(dedup_bam, filtered_bam, blacklist_files, exclude_chr)
@@ -1617,29 +1625,45 @@ class ATACSeqPipeline:
 
     # this is required for MACS3 filtering
     def filter_bam(self, input_bam, output_bam, blacklist_files, exclude_chr):
+        import tempfile
+        import shutil
 
-        cmd_parts = []
+        tmp_dir = tempfile.mkdtemp()
+        step1 = os.path.join(tmp_dir, "step1.bam")
 
-        # Blacklist filtering
-        if blacklist_files:
-            blacklist_str = " ".join(blacklist_files)
-            cmd_parts.append(f"bedtools intersect -v -abam {input_bam} -b {blacklist_str}")
-        else:
-            cmd_parts.append(f"samtools view -h -b {input_bam}")
-
-        # Exclude chromosomes
-        if exclude_chr:
-            pat = "|".join(re.escape(c) for c in exclude_chr)
-            cmd_parts.append(
-                f"samtools view -h - | awk '$1 ~ /^@/ || $3 !~ /^({pat})$/' | samtools view -b -"
-            )
-
-        cmd = " | ".join(cmd_parts) + f" > {output_bam}"
         try:
-            subprocess.run(cmd, shell=True, check=True)
+            # Step 1: Blacklist filtering
+            if blacklist_files:
+                blacklist_str = " ".join(blacklist_files)
+                cmd1 = f"bedtools intersect -v -abam {input_bam} -b {blacklist_str} > {step1}"
+            else:
+                shutil.copy(input_bam, step1)
+                cmd1 = None
+
+            if cmd1:
+                self.update_output_gui(f"Running blacklist filtering:\n{cmd1}\n")
+                subprocess.run(cmd1, shell=True, check=True)
+
+            # Step 2: Exclude chromosomes
+            if exclude_chr:
+                pat = "|".join(re.escape(c) for c in exclude_chr)
+                cmd2 = (
+                    f"samtools view -h {step1} | "
+                    f"awk '$1 ~ /^@/ || $3 !~ /^({pat})$/' | "
+                    f"samtools view -b - > {output_bam}"
+                )
+            else:
+                shutil.copy(step1, output_bam)
+                cmd2 = None
+
+            if cmd2:
+                self.update_output_gui(f"Running exclude chromosome filter:\n{cmd2}\n")
+                subprocess.run(cmd2, shell=True, check=True)
+
         except subprocess.CalledProcessError as e:
             raise Exception(f"BAM filtering failed: {str(e)}")
-
+        finally:
+            shutil.rmtree(tmp_dir)
 
     # required for coverage matrix calculation and plotting of bigwigs
     def gtf_to_tss_bed(
