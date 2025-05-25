@@ -236,15 +236,16 @@ class ATACSeqPipeline:
         # Extract base sample names from full paths
         for filepath in selected_files:
             base = os.path.basename(filepath)
-            match = re.match(r"^(.+?)_[12]\.(?:fastq|fq)\.gz$", base)
+
+            # Match: _R1_001, _1.fastq.gz, etc.
+            match = re.match(r"^(.*?)(?:_R?[12](?:_001)?|_[12])\.f(?:ast)?q\.gz$", base)
+
             if match:
                 sample_name = match.group(1)
             else:
-                sample_name = base.replace("_1.fastq.gz", "") \
-                    .replace("_2.fastq.gz", "") \
-                    .replace("_1.fq.gz", "") \
-                    .replace("_2.fq.gz", "") \
-                    .split(".")[0]
+                # Fallback: strip known suffixes
+                sample_name = re.sub(r'(_R?[12](?:_001)?|_[12])\.f(?:ast)?q\.gz$', '', base)
+
             sample_names.add(sample_name)
 
         self.params["step1"]["auto_sample_names"] = sorted(sample_names)
@@ -1053,21 +1054,13 @@ class ATACSeqPipeline:
             # Get selected samples from Step 1
             selected_samples = self.params["step1"].get("selected_samples")
 
-            # If specific samples are selected, filter Step 2 samples
             if selected_samples:
-                # Extract base sample names from selected files (same logic as Step 1)
-                selected_names = set()
-                for filename in selected_samples:
-                    base = os.path.basename(filename)
-                    match = re.match(r"^(.+?)_[12]\.(?:fastq|fq)\.gz$", base)
-                    if match:
-                        sample_name = match.group(1)
-                    else:
-                        sample_name = base.replace("_1.fastq.gz", "").replace("_2.fastq.gz", "").split(".")[0]
-                    selected_names.add(sample_name)
-
-                # Filter Step 2 samples to only include selected ones
-                samples = [s for s in samples if s in selected_names]
+                selected_names = {
+                    os.path.basename(f).split("_")[0] for f in selected_samples
+                }
+                samples = [s for s in self.params["step1"]["auto_sample_names"] if s in selected_names]
+            else:
+                samples = self.params["step1"]["auto_sample_names"]
 
             # Step 1: FastQC on raw data
             self.update_output_gui("Checking Step 1: FastQC raw data...\n")
@@ -1108,14 +1101,14 @@ class ATACSeqPipeline:
             else:
                 self.update_output_gui("Skipping Step 2: MultiQC raw data (report exists)\n")
 
-            # Step 3: Trim Galore
             selected_samples = self.params["step1"].get("selected_samples")
-
-            if selected_samples is None:
+            if not selected_samples:
                 raw_data_dir = self.params["step1"]["raw_data_dir"]
                 selected_samples = glob.glob(os.path.join(raw_data_dir, "*.fastq.gz")) + \
                                    glob.glob(os.path.join(raw_data_dir, "*.fq.gz"))
 
+
+            # Step 3: Trimming
             if not self.params["step2"].get("skip_trimming", False):
                 self.update_output_gui("Checking Step 3: Trim Galore...\n")
                 for sample in samples:
@@ -1123,11 +1116,12 @@ class ATACSeqPipeline:
                     output_r2 = os.path.join(trimmed_data, f"{sample}_val_2.fq.gz")
 
                     if not (os.path.exists(output_r1) and os.path.exists(output_r2)):
-                        # Filter the list to find sample's raw read files
                         sample_files = [f for f in selected_samples if sample in os.path.basename(f)]
 
-                        r1_list = [f for f in sample_files if "_1" in os.path.basename(f)]
-                        r2_list = [f for f in sample_files if "_2" in os.path.basename(f)]
+                        r1_list = [f for f in sample_files if
+                                   re.search(r"_R?1(?:_001)?\.f(ast)?q\.gz$", os.path.basename(f))]
+                        r2_list = [f for f in sample_files if
+                                   re.search(r"_R?2(?:_001)?\.f(ast)?q\.gz$", os.path.basename(f))]
 
                         if not r1_list or not r2_list:
                             self.update_output_gui(f"Warning: Could not find both pairs for sample {sample}\n")
@@ -1145,7 +1139,6 @@ class ATACSeqPipeline:
                         self.update_output_gui(f"Skipping Trim Galore for {sample} (trimmed files exist)\n")
             else:
                 self.update_output_gui("Skipping Step 3: Trim Galore (User chose to use raw data)\n")
-
 
             # Step 4: FastQC on trimmed data
             if not self.params["step2"].get("skip_trimming", False):
@@ -1273,14 +1266,73 @@ class ATACSeqPipeline:
             if not os.path.exists(tss_bed):
                 self.update_output_gui("Generating TSS BED file from GTF...\n")
                 try:
-                    self.gtf_to_tss_bed(gtf_file, tss_bed, gene_biotype="protein_coding")
+                    self.gtf_to_tss_bed(
+                        gtf_file=gtf_file,
+                        output_bed=tss_bed,
+                        genome_assembly=genome_version,
+                        gene_biotype="protein_coding"
+                    )
                 except Exception as e:
                     self.show_error_gui(f"Failed to create TSS BED file: {str(e)}")
                     return
 
-
             # Step 6: Alignment and Sorting
             self.update_output_gui("Checking Step 6: Alignment...\n")
+
+            selected_samples = self.params["step1"].get("selected_samples")
+            auto_sample_names = self.params["step1"].get("auto_sample_names", [])
+            sample_file_map = {}
+
+            if selected_samples:
+                # User selected specific FASTQ files
+                for r1_path in selected_samples:
+                    base_r1 = os.path.basename(r1_path)
+
+                    # Match R1 file and extract sample name
+                    match = re.match(r"^(.*?)(_R?1(?:_001)?|_1)\.f(?:ast)?q\.gz$", base_r1)
+                    if not match:
+                        continue  # Skip unrecognized files
+
+                    sample_name = match.group(1)
+                    r2_path = re.sub(r'(_R?)1(\d*)', r'\g<1>2\g<2>', r1_path)
+
+                    if self.params["step2"].get("skip_trimming", False):
+                        sample_file_map[sample_name] = {"r1": r1_path, "r2": r2_path}
+                    else:
+                        trimmed_r1 = os.path.join(trimmed_data, f"{sample_name}_val_1.fq.gz")
+                        trimmed_r2 = os.path.join(trimmed_data, f"{sample_name}_val_2.fq.gz")
+
+                        sample_file_map[sample_name] = {"r1": trimmed_r1, "r2": trimmed_r2}
+
+                samples = list(sample_file_map.keys())
+
+            else:
+                samples = auto_sample_names
+                for sample in samples:
+                    if self.params["step2"].get("skip_trimming", False):
+                        r1_candidates = glob.glob(os.path.join(raw_data, f"{sample}_*R1*.fastq.gz")) + \
+                                        glob.glob(os.path.join(raw_data, f"{sample}_*1*.fastq.gz")) + \
+                                        glob.glob(os.path.join(raw_data, f"{sample}_*R1*.fq.gz")) + \
+                                        glob.glob(os.path.join(raw_data, f"{sample}_*1*.fq.gz"))
+
+                        r2_candidates = glob.glob(os.path.join(raw_data, f"{sample}_*R2*.fastq.gz")) + \
+                                        glob.glob(os.path.join(raw_data, f"{sample}_*2*.fastq.gz")) + \
+                                        glob.glob(os.path.join(raw_data, f"{sample}_*R2*.fq.gz")) + \
+                                        glob.glob(os.path.join(raw_data, f"{sample}_*2*.fq.gz"))
+
+                        if not r1_candidates or not r2_candidates:
+                            raise ValueError(f"Could not find paired files for sample {sample} in {raw_data}")
+
+                        r1 = sorted(r1_candidates)[0]
+                        r2 = sorted(r2_candidates)[0]
+
+                    else:
+                        r1 = os.path.join(trimmed_data, f"{sample}_val_1.fq.gz")
+                        r2 = os.path.join(trimmed_data, f"{sample}_val_2.fq.gz")
+
+                    sample_file_map[sample] = {"r1": r1, "r2": r2}
+
+            # Main alignment loop
             for sample in samples:
                 coord_sorted_bam = os.path.join(bam_output, f"{sample}.sort.bam")
                 name_sorted_bam = os.path.join(bam_output, f"{sample}.name.sorted.bam")
@@ -1288,16 +1340,10 @@ class ATACSeqPipeline:
                 if not (os.path.exists(coord_sorted_bam) and os.path.exists(coord_sorted_bam + ".bai")):
                     self.update_output_gui(f"Aligning {sample}...\n")
 
-                    # Retrieve the correct reference genome (custom or dropdown)
                     genome_version = self.params["step3"].get("genome_version", "").strip()
 
-                    # Use trimmed data if trimming was done, else use raw data
-                    if self.params["step2"].get("skip_trimming", False):
-                        r1 = f"{raw_data}/{sample}_1.fastq.gz"
-                        r2 = f"{raw_data}/{sample}_2.fastq.gz"
-                    else:
-                        r1 = f"{trimmed_data}/{sample}_val_1.fq.gz"
-                        r2 = f"{trimmed_data}/{sample}_val_2.fq.gz"
+                    r1 = sample_file_map[sample]["r1"]
+                    r2 = sample_file_map[sample]["r2"]
 
                     cmd = (f"bowtie2 -p 8 --very-sensitive -X 2000 -x {bt2_base} "
                            f"-1 {r1} -2 {r2} "
@@ -1391,7 +1437,6 @@ class ATACSeqPipeline:
                 self.show_error_gui(f"Failed to generate TSS matrix and heatmap: {str(e)}")
                 return
 
-
             # =================== Step 8: Peak Calling (Genrich or MACS3) =================== #
 
             # Genrich
@@ -1451,56 +1496,91 @@ class ATACSeqPipeline:
 
                 cmd_all = ""
                 files_to_delete = set()
-
-                # Pre-filter control files if needed
                 control_filtered_map = {}
+
+                # Process control samples
                 for ctrl in control:
-                    control_input = f"{bam_dir}/{ctrl}.sort.bam"
-                    control_filtered = f"{bam_dir}/{ctrl}.filtered.sort.bam"
-                    control_filtered_map[ctrl] = control_filtered
+                    name_sorted_bam = os.path.join(bam_dir, f"{ctrl}.name.sorted.bam")
+                    fixed_bam = os.path.join(bam_dir, f"{ctrl}.fixmate.bam")
+                    coord_bam = os.path.join(bam_dir, f"{ctrl}.coord.bam")
+                    dedup_bam = os.path.join(bam_dir, f"{ctrl}.dedup.bam")
+                    filtered_bam = os.path.join(bam_dir, f"{ctrl}.filtered.dedup.bam")
 
-                    if not os.path.exists(control_filtered):
-                        self.update_output_gui(f"Filtering BAM for control sample {ctrl}...\n")
-                        try:
-                            self.filter_bam(control_input, control_filtered, blacklist_files, exclude_chr)
-                            files_to_delete.add(control_filtered)
-                        except Exception as e:
-                            self.show_error_gui(f"BAM filtering failed for control sample {ctrl}: {str(e)}")
-                            return
+                    self.update_output_gui(f"Processing control sample {ctrl}...\n")
 
-                # Process each treated sample
-                for s in treated:
-                    input_bam = f"{bam_dir}/{s}.sort.bam"
-                    filtered_bam = f"{bam_dir}/{s}.filtered.sort.bam"
+                    cmd = (
+                        f"samtools fixmate -m {name_sorted_bam} {fixed_bam} && "
+                        f"samtools sort --threads 8 -o {coord_bam} {fixed_bam} && "
+                        f"samtools markdup -r --threads 8 {coord_bam} {dedup_bam} && "
+                        f"samtools index -@ 8 {dedup_bam}"
+                    )
+                    if not self.run_blocking_command(cmd):
+                        return
 
-                    self.update_output_gui(f"Filtering BAM for treated sample {s}...\n")
+                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
+
                     try:
-                        self.filter_bam(input_bam, filtered_bam, blacklist_files, exclude_chr)
+                        self.filter_bam(dedup_bam, filtered_bam, blacklist_files, exclude_chr)
+                        files_to_delete.add(filtered_bam)
+                        control_filtered_map[ctrl] = filtered_bam
+                    except Exception as e:
+                        self.show_error_gui(f"BAM filtering failed for control sample {ctrl}: {str(e)}")
+                        return
+
+                # Process treated samples
+                for s in treated:
+                    name_sorted_bam = os.path.join(bam_dir, f"{s}.name.sorted.bam")
+                    fixed_bam = os.path.join(bam_dir, f"{s}.fixmate.bam")
+                    coord_bam = os.path.join(bam_dir, f"{s}.coord.bam")
+                    dedup_bam = os.path.join(bam_dir, f"{s}.dedup.bam")
+                    filtered_bam = os.path.join(bam_dir, f"{s}.filtered.dedup.bam")
+
+                    self.update_output_gui(f"Processing treated sample {s}...\n")
+
+                    cmd = (
+                        f"samtools fixmate -m {name_sorted_bam} {fixed_bam} && "
+                        f"samtools sort --threads 8 -o {coord_bam} {fixed_bam} && "
+                        f"samtools markdup -r --threads 8 {coord_bam} {dedup_bam} && "
+                        f"samtools index -@ 8 {dedup_bam}"
+                    )
+                    if not self.run_blocking_command(cmd):
+                        return
+
+                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
+
+                    try:
+                        self.filter_bam(dedup_bam, filtered_bam, blacklist_files, exclude_chr)
                         files_to_delete.add(filtered_bam)
                     except Exception as e:
                         self.show_error_gui(f"BAM filtering failed for sample {s}: {str(e)}")
                         return
 
+                    # MACS3 command construction
                     if control:
                         for ctrl in control:
-                            control_filtered = control_filtered_map[ctrl]
-                            output_prefix = f"{peak_files}/{s}_{ctrl}.macs3.peak"
-                            cmd = (f"macs3 callpeak -f BAMPE --call-summits -t {filtered_bam} -c {control_filtered} "
-                                   f"-g {genome_size} -n {output_prefix} -B -q {max_q}")
+                            control_bam = control_filtered_map[ctrl]
+                            output_prefix = os.path.join(peak_files, f"{s}_{ctrl}.macs3.peak")
+                            cmd = (
+                                f"macs3 callpeak -f BAMPE --call-summits -t {filtered_bam} -c {control_bam} "
+                                f"-g {genome_size} -n {output_prefix} -B -q {max_q}"
+                            )
                             cmd_all += cmd + " && "
                     else:
-                        output_prefix = f"{peak_files}/{s}.macs3.peak"
-                        cmd = (f"macs3 callpeak -f BAMPE --call-summits -t {filtered_bam} "
-                               f"-g {genome_size} -n {output_prefix} -B -q {max_q}")
+                        output_prefix = os.path.join(peak_files, f"{s}.macs3.peak")
+                        cmd = (
+                            f"macs3 callpeak -f BAMPE --call-summits -t {filtered_bam} "
+                            f"-g {genome_size} -n {output_prefix} -B -q {max_q}"
+                        )
                         cmd_all += cmd + " && "
 
+                # Execute MACS3
                 cmd_all = cmd_all.rstrip(" && ")
                 self.update_output_gui("Running Step 8: MACS3 Peak Calling...\n")
                 if not self.run_blocking_command(cmd_all):
                     return
 
-                # Safe cleanup
-                self.update_output_gui("Cleaning up temporary filtered BAM files...\n")
+                # Cleanup
+                self.update_output_gui("Cleaning up temporary BAM files...\n")
                 for f in files_to_delete:
                     try:
                         os.remove(f)
@@ -1566,36 +1646,78 @@ class ATACSeqPipeline:
             self,
             gtf_file: str,
             output_bed: str,
-            gene_biotype: str = "protein_coding",
-            allowed_chromosomes: set = None,
-            exclude_non_primary: bool = True
+            genome_assembly: str,
+            gene_biotype: str = "protein_coding"
     ):
+        """
+        Converts GTF to TSS BED, excluding mitochondrial chromosomes dynamically based on genome assembly.
+
+        Args:
+            gtf_file: Input GTF path (can be gzipped).
+            output_bed: Output BED path.
+            genome_assembly: Genome assembly name like "GRCh38", "GRCm39".
+            gene_biotype: Filter gene biotype.
+        """
+
+        mito_chromosomes = {
+            "GRCh38": {"chrM", "MT", "M"},
+            "GRCm39": {"chrM", "MT", "M"},
+            "mRatBN7.2": {"chrM", "MT", "M"},
+            "ARS-UCD1.3": {"chrM", "MT", "M"},  # Bos taurus mitochondrion is usually "MT" or "chrM"
+            "Sscrofa11.1": {"chrM", "MT", "M"},
+            "GRCg7b": {"chrM", "MT", "M"},  # Gallus gallus (chicken) mito often "chrM" or "MT"
+            "Pan_tro_3.0": {"chrM", "MT", "M"},  # Chimpanzee mitochondrion likely similar to human
+            "ROS_Cfam_1.0": {"chrM", "MT", "M"},  # Dog mitochondrion
+            "ARS1": {"chrM", "MT", "M"},  # Capra hircus (goat) mitochondrion, check assembly docs if needed
+            "CVASU_BBG_1.0": {"chrM", "MT", "M"},  # Another goat assembly, same as above
+            "OryCun2.0": {"chrM", "MT", "M"},  # Rabbit mitochondrion
+            "gorGor4": {"chrM", "MT", "M"},  # Gorilla mitochondrion
+            "Mmul_10": {"chrM", "MT", "M"},  # Macaca mulatta (rhesus macaque)
+
+            # Fish & Amphibians
+            "GRCz11": {"chrM", "MT", "M"},
+            "UCB_Xtro_10.0": {"chrM", "MT", "M"},  # Xenopus tropicalis
+            "Ssal_v3.1": {"chrM", "MT", "M"},  # Salmo salar (Atlantic salmon)
+
+            # Invertebrates
+            "BDGP6": {"chrM", "mitochondrion", "MT"},
+            "WBcel235": {"MtDNA", "chrM"},
+        }
+
+
+        # Keyword-based blacklist (safe for most organisms)
+        non_primary_keywords = {"random", "alt", "hap", "fix", "patch", "scaffold", "gl", "un", "ki"}
 
         def is_primary_contig(chrom: str) -> bool:
             chrom = chrom.lower()
-            return not any(x in chrom for x in ["random", "alt", "hap", "fix", "gl", "un", "scaffold", "kb"])
+            return not any(k in chrom for k in non_primary_keywords)
 
-        with (gzip.open(gtf_file, "rt") if gtf_file.endswith(".gz") else open(gtf_file, "r")) as infile, \
-                open(output_bed, "w") as outfile:
+        exclude_chroms = mito_chromosomes.get(genome_assembly, set())
+
+        with (
+                gzip.open(gtf_file, "rt") if gtf_file.endswith(".gz") else open(gtf_file, "r")
+        ) as infile, open(output_bed, "w") as outfile:
 
             seen_genes = set()
 
             for line in infile:
                 if line.startswith("#"):
                     continue
-
                 cols = line.strip().split("\t")
                 if len(cols) < 9 or cols[2].lower() != "gene":
                     continue
 
                 chrom = cols[0]
 
-                if allowed_chromosomes:
-                    if chrom not in allowed_chromosomes:
-                        continue
-                elif exclude_non_primary and not is_primary_contig(chrom):
+                # Exclude mitochondrial chromosomes for this genome assembly
+                if chrom in exclude_chroms:
                     continue
 
+                # Optionally skip non-primary contigs (unplaced scaffolds, alt loci)
+                if not is_primary_contig(chrom):
+                    continue
+
+                # Parse attributes
                 attrs = {}
                 for pair in cols[8].strip().split(";"):
                     pair = pair.strip()
@@ -1605,9 +1727,10 @@ class ATACSeqPipeline:
                         key, val = pair.split(" ", 1)
                         val = val.strip("\"")
                     else:
-                        key, val = (pair.split("=") if "=" in pair else (pair, ""))
+                        key, val = pair.split("=") if "=" in pair else (pair, "")
                     attrs[key.strip()] = val.strip()
 
+                # Filter by gene biotype
                 biotype = attrs.get("gene_biotype") or attrs.get("gene_type") or attrs.get("biotype")
                 if not biotype or biotype.lower() != gene_biotype.lower():
                     continue
@@ -1617,12 +1740,16 @@ class ATACSeqPipeline:
                 end = int(cols[4])
                 tss = start if strand == "+" else end
 
+                bed_start = tss - 1
+                bed_end = bed_start + 1
+
                 gene_id = attrs.get("gene_id") or attrs.get("ID")
-                if gene_id in seen_genes:
+                if not gene_id or gene_id in seen_genes:
                     continue
                 seen_genes.add(gene_id)
 
-                outfile.write(f"{chrom}\t{tss - 1}\t{tss}\t{gene_id}\t.\t{strand}\n")
+                outfile.write(f"{chrom}\t{bed_start}\t{bed_end}\t{gene_id}\t.\t{strand}\n")
+
 
     def run_tss_matrix_and_heatmap(self, tss_bed: str, bw_dir: str, out_prefix: str):
 
@@ -1962,3 +2089,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
