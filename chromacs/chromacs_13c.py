@@ -1525,7 +1525,7 @@ class ATACSeqPipeline:
                     if not self.run_blocking_command(cmd):
                         return
 
-                    files_to_delete.update([fixed_bam, coord_bam])
+                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
 
                     try:
                         self.filter_bam(dedup_bam, filtered_bam, blacklist_files, exclude_chr)
@@ -1554,7 +1554,7 @@ class ATACSeqPipeline:
                     if not self.run_blocking_command(cmd):
                         return
 
-                    files_to_delete.update([fixed_bam, coord_bam])
+                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
 
                     try:
                         self.filter_bam(dedup_bam, filtered_bam, blacklist_files, exclude_chr)
