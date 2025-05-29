@@ -999,8 +999,27 @@ class ATACSeqPipeline:
         )
         self.diffbind_btn.pack()
 
+        # NOISeq info label
+        noisq_info = (
+            "If you do not have biological replicates, you can use NOISeq instead of DiffBind.\n"
+            "NOISeq performs a simulation-based differential analysis on a peak count matrix."
+        )
+        tk.Label(
+            frame, text=noisq_info, wraplength=800, justify=tk.LEFT,
+            anchor="center", font=(self.roboto_font, 9, 'italic')
+        ).grid(row=4, column=1, padx=20, pady=(10, 5), sticky="ew")
+
+        # NOISeq button (centered below)
+        noisq_btn_frame = tk.Frame(frame)
+        noisq_btn_frame.grid(row=5, column=1, pady=(5, 20))
+        self.noisq_btn = tk.Button(
+            noisq_btn_frame, text="Run NOISeq Analysis (No Replicates)", bg='light blue',
+            command=self.launch_noisq_config
+        )
+        self.noisq_btn.pack()
+
         # Let rows expand if window height increases
-        for i in range(4):
+        for i in range(5):
             frame.grid_rowconfigure(i, weight=1)
 
     # =================== Final Run Pipeline =================== #
@@ -2065,7 +2084,215 @@ class ATACSeqPipeline:
         threading.Thread(target=worker, daemon=True).start()
 
 
-# ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+    # =================== NoiSeq Analysis Logic =================== #
+
+    def launch_noisq_config(self):
+        self.noisq_window = tk.Toplevel(self.root)
+        self.noisq_window.title("NOISeq Configuration")
+        self.noisq_window.geometry("1000x600")
+
+        # Peak file selection
+        tk.Label(self.noisq_window, text="Select Peak Files (1 per sample):",
+                 font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, padx=10, pady=5)
+
+        self.noisq_peak_listbox = tk.Listbox(self.noisq_window, selectmode=tk.MULTIPLE, exportselection=False,
+                                             height=10, width=80)
+        self.noisq_peak_listbox.grid(row=0, column=1, padx=10, pady=5)
+        tk.Button(self.noisq_window, text="Browse Peaks",
+                  command=self.populate_noisq_peak_list, bg='gray').grid(row=0, column=2)
+
+        # Metadata assignment
+        self.noisq_meta_frame = tk.Frame(self.noisq_window)
+        self.noisq_meta_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+
+        self.noisq_conditions = {}
+
+        self.noisq_peak_listbox.bind('<<ListboxSelect>>', lambda e: self.build_noisq_param_rows())
+
+        # Run button
+        tk.Button(self.noisq_window, text="Run NOISeq",
+                  command=self.run_noisq_gui, bg="light green").grid(row=2, column=1, pady=10)
+
+        # annotate button
+        tk.Button(
+            self.noisq_window,
+            text="Annotate NOISeq Results",
+            command=self.launch_noisq_annotation,
+            bg="cyan"
+        ).grid(row=3, column=1, pady=10)
+
+    def populate_noisq_peak_list(self):
+        self.noisq_peak_listbox.delete(0, tk.END)
+        peak_dir = os.path.join(self.params["step1"]["base_output_dir"], "peak_files")
+        peak_files = glob.glob(os.path.join(peak_dir, "*.narrowPeak")) \
+                     + glob.glob(os.path.join(peak_dir, "*.genrich.peak"))
+        for pf in sorted(peak_files):
+            name = os.path.basename(pf)
+            self.noisq_peak_listbox.insert(tk.END, name)
+            self.noisq_conditions[name] = tk.StringVar(value="treated")
+
+    def build_noisq_param_rows(self):
+        for child in self.noisq_meta_frame.winfo_children():
+            child.destroy()
+
+        tk.Label(self.noisq_meta_frame, text="Peak File").grid(row=0, column=0, padx=5)
+        tk.Label(self.noisq_meta_frame, text="Condition").grid(row=0, column=1, padx=5)
+
+        for i, idx in enumerate(self.noisq_peak_listbox.curselection(), start=1):
+            peak = self.noisq_peak_listbox.get(idx)
+            tk.Label(self.noisq_meta_frame, text=peak).grid(row=i, column=0, sticky='w')
+            ttk.Combobox(self.noisq_meta_frame, textvariable=self.noisq_conditions[peak],
+                         values=["treated", "untreated"], state="readonly").grid(row=i, column=1)
+
+
+    def run_noisq_gui(self):
+        selected = self.noisq_peak_listbox.curselection()
+        if not selected:
+            self.show_error_gui("Please select at least one peak file for NOISeq.")
+            return
+
+        base_dir = self.params["step1"]["base_output_dir"]
+        peak_dir = os.path.join(base_dir, "peak_files")
+        bam_dir = os.path.join(base_dir, "bam_output")
+        out_dir = os.path.join(base_dir, "noisq_results")
+        os.makedirs(out_dir, exist_ok=True)
+
+        # Generate metadata.csv
+        metadata_rows = []
+        for idx in selected:
+            peak_file = self.noisq_peak_listbox.get(idx)
+            sample_id = os.path.basename(peak_file).split('.')[0]
+            condition = self.noisq_conditions[peak_file].get()
+            metadata_rows.append({
+                "SampleID": sample_id,
+                "Condition": condition,
+                "Peaks": os.path.join(peak_dir, peak_file),
+                "bamReads": os.path.join(bam_dir, f"{sample_id}.sort.bam")
+            })
+
+        metadata_df = pd.DataFrame(metadata_rows)
+        meta_csv = os.path.join(out_dir, "metadata.csv")
+        metadata_df.to_csv(meta_csv, index=False)
+
+        # Generate consensus peaks and count matrix
+        try:
+            # Generate consensus peaks
+            all_peaks = [os.path.join(peak_dir, self.noisq_peak_listbox.get(idx)) for idx in selected]
+            merged_bed = os.path.join(out_dir, "consensus_peaks.bed")
+
+            # Use absolute paths and check command success
+            cat_cmd = f"cat {' '.join(all_peaks)} | cut -f1-3 | sort -k1,1 -k2,2n | bedtools merge > {merged_bed}"
+            result = subprocess.run(cat_cmd, shell=True, check=True, capture_output=True, text=True)
+            self.update_output_gui(result.stdout)
+
+            # Generate SAF file
+            saf_file = os.path.join(out_dir, "consensus_peaks.saf")
+            with open(merged_bed, 'r') as infile, open(saf_file, 'w') as outfile:
+                outfile.write("GeneID\tChr\tStart\tEnd\tStrand\n")
+                for i, line in enumerate(infile, 1):
+                    parts = line.strip().split('\t')
+                    outfile.write(f"peak{i}\t{parts[0]}\t{parts[1]}\t{parts[2]}\t.\n")
+
+            # Run featureCounts
+            bam_files = [row['bamReads'] for row in metadata_rows]
+            count_matrix = os.path.join(out_dir, "peak_counts.txt")
+            feature_cmd = (
+                f"featureCounts -a {saf_file} -F SAF -T 8 -p -B -C "
+                f"-o {count_matrix} {' '.join(bam_files)}"
+            )
+            result = subprocess.run(feature_cmd, shell=True, check=True, capture_output=True, text=True)
+            self.update_output_gui(result.stdout)
+
+            # Process counts matrix
+            counts_df = pd.read_csv(count_matrix, sep='\t', comment='#', skiprows=1)
+            counts_df = counts_df.drop(columns=["Chr", "Start", "End", "Strand", "Length"])
+            counts_df = counts_df.rename(columns={"Geneid": "peak_id"})
+
+            # Fix column headers to use SampleIDs instead of full BAM paths
+            bam_to_sample = dict(zip(metadata_df["bamReads"], metadata_df["SampleID"]))
+            # Leave 'peak_id' column intact, rename only BAM paths
+            new_columns = []
+            for col in counts_df.columns:
+                if col == "peak_id":
+                    new_columns.append(col)
+                else:
+                    new_columns.append(bam_to_sample.get(col, col))
+            counts_df.columns = new_columns
+
+            # Save the cleaned count matrix
+            peak_matrix_clean = os.path.join(out_dir, "peak_matrix.csv")
+            counts_df.to_csv(peak_matrix_clean, index=False)
+
+
+        except subprocess.CalledProcessError as e:
+            self.show_error_gui(f"Command failed: {e.cmd}\nError: {e.stderr}")
+            return
+
+        # Run R script
+        r_script = resource_filename('chromacs', 'noisq_atac.R')
+        output_xlsx = os.path.join(out_dir, "noisq_results.xlsx")
+        counts_csv = os.path.join(out_dir, "peak_matrix.csv")
+        cmd = ["Rscript", r_script, counts_csv, meta_csv, output_xlsx]
+
+        def worker():
+            try:
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    bufsize=1
+                )
+                for line in iter(proc.stdout.readline, ''):
+                    self.update_output_gui(line)
+                proc.wait()
+                if proc.returncode == 0:
+                    self.update_output_gui("✅ NOISeq analysis completed!\n")
+                    messagebox.showinfo("Success", f"Results saved to:\n{output_xlsx}")
+                else:
+                    self.show_error_gui(f"NOISeq failed with exit code {proc.returncode}")
+            except Exception as e:
+                self.show_error_gui(f"Error running NOISeq: {str(e)}")
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def launch_noisq_annotation(self):
+        base_dir = self.params["step1"]["base_output_dir"]
+        noisq_results = os.path.join(base_dir, "noisq_results", "noisq_results.xlsx")
+        peak_counts = os.path.join(base_dir, "noisq_results", "peak_counts.txt")
+        assembly = self.params["step3"]["genome_version"]
+        ref_dir = self.params["step3"]["ref_dir"]
+
+        r_script = resource_filename('chromacs', 'annotate_noisq.R')
+
+        cmd = [
+            "Rscript", r_script,
+            noisq_results,
+            peak_counts,
+            assembly,
+            ref_dir
+        ]
+
+        def worker():
+            try:
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True
+                )
+                for line in proc.stdout:
+                    self.root.after(0, lambda l=line: self.update_output_gui(l))
+                proc.wait()
+                self.root.after(0, lambda: messagebox.showinfo(
+                    "Success", "NOISeq annotation complete!"
+                ))
+            except Exception as e:
+                self.root.after(0, lambda: self.show_error_gui(str(e)))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
 
     def run_blocking_command(self, command):
