@@ -2144,6 +2144,35 @@ class ATACSeqPipeline:
             ttk.Combobox(self.noisq_meta_frame, textvariable=self.noisq_conditions[peak],
                          values=["treated", "untreated"], state="readonly").grid(row=i, column=1)
 
+    def generate_noisq_metadata(self):
+        rows = []
+        base = self.params["step1"]["base_output_dir"]
+
+        for idx in self.noisq_peak_listbox.curselection():
+            peak_filename = self.noisq_peak_listbox.get(idx)
+            sample_id_with_suffix = os.path.basename(peak_filename).split('.')[0]
+
+            # Apply same fix as DiffBind
+            if 'macs3' in peak_filename.lower():
+                # Take only the first SRR/identifier (before underscore)
+                sample_id = sample_id_with_suffix.split('_')[0]
+            else:
+                sample_id = sample_id_with_suffix
+
+            peak_path = os.path.join(base, "peak_files", peak_filename)
+            bam_reads = os.path.join(base, "bam_output", f"{sample_id}.sort.bam")
+
+            # You may already have fields like condition/replicate set via UI
+            condition = self.noisq_conditions[peak_filename].get()
+
+            rows.append({
+                "SampleID": sample_id,
+                "Condition": condition,
+                "Peaks": peak_path,
+                "bamReads": bam_reads,
+            })
+
+        return pd.DataFrame(rows)
 
     def run_noisq_gui(self):
         selected = self.noisq_peak_listbox.curselection()
@@ -2153,24 +2182,10 @@ class ATACSeqPipeline:
 
         base_dir = self.params["step1"]["base_output_dir"]
         peak_dir = os.path.join(base_dir, "peak_files")
-        bam_dir = os.path.join(base_dir, "bam_output")
         out_dir = os.path.join(base_dir, "noisq_results")
         os.makedirs(out_dir, exist_ok=True)
 
-        # Generate metadata.csv
-        metadata_rows = []
-        for idx in selected:
-            peak_file = self.noisq_peak_listbox.get(idx)
-            sample_id = os.path.basename(peak_file).split('.')[0]
-            condition = self.noisq_conditions[peak_file].get()
-            metadata_rows.append({
-                "SampleID": sample_id,
-                "Condition": condition,
-                "Peaks": os.path.join(peak_dir, peak_file),
-                "bamReads": os.path.join(bam_dir, f"{sample_id}.sort.bam")
-            })
-
-        metadata_df = pd.DataFrame(metadata_rows)
+        metadata_df = self.generate_noisq_metadata()
         meta_csv = os.path.join(out_dir, "metadata.csv")
         metadata_df.to_csv(meta_csv, index=False)
 
@@ -2194,7 +2209,7 @@ class ATACSeqPipeline:
                     outfile.write(f"peak{i}\t{parts[0]}\t{parts[1]}\t{parts[2]}\t.\n")
 
             # Run featureCounts
-            bam_files = [row['bamReads'] for row in metadata_rows]
+            bam_files = metadata_df["bamReads"].tolist()
             count_matrix = os.path.join(out_dir, "peak_counts.txt")
             feature_cmd = (
                 f"featureCounts -a {saf_file} -F SAF -T 8 -p -B -C "

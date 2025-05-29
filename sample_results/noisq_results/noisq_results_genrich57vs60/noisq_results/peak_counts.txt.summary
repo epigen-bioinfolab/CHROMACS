@@ -1,0 +1,15 @@
+Status	/home/geb_mercury/ATAC_seq_project/new_results/bam_output/SRR5800657.sort.bam	/home/geb_mercury/ATAC_seq_project/new_results/bam_output/SRR5800660.sort.bam
+Assigned	8768543	10422311
+Unassigned_Unmapped	711503	778894
+Unassigned_Read_Type	0	0
+Unassigned_Singleton	0	0
+Unassigned_MappingQuality	0	0
+Unassigned_Chimera	0	0
+Unassigned_FragmentLength	0	0
+Unassigned_Duplicate	0	0
+Unassigned_MultiMapping	0	0
+Unassigned_Secondary	0	0
+Unassigned_NonSplit	0	0
+Unassigned_NoFeatures	51540570	52739187
+Unassigned_Overlapping_Length	0	0
+Unassigned_Ambiguity	8	22

@@ -1,0 +1,3 @@
+SampleID,Condition,Peaks,bamReads
+SRR5800657,untreated,/home/geb_mercury/ATAC_seq_project/new_results/peak_files/SRR5800657.genrich.peak,/home/geb_mercury/ATAC_seq_project/new_results/bam_output/SRR5800657.sort.bam
+SRR5800660,treated,/home/geb_mercury/ATAC_seq_project/new_results/peak_files/SRR5800660.genrich.peak,/home/geb_mercury/ATAC_seq_project/new_results/bam_output/SRR5800660.sort.bam
