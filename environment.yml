@@ -18,12 +18,15 @@ dependencies:
   - bioconductor-clusterprofiler
   - bioconductor-txdbmaker
   - bioconductor-biomart
+  - bioconductor-noiseq
 
   # CRAN
   - r-ggplot2
   - r-gridextra
   - r-r.utils
-  - r-xml2                 
+  - r-xml2
+  - r-openxlsx
+  - r-ggrepel                 
 
   # Python
   - pandas
@@ -40,5 +43,6 @@ dependencies:
   - genrich
   - bedtools
   - deeptools
+  - subread
   - aria2
   - pip
