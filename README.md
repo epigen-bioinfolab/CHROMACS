@@ -17,7 +17,7 @@ CHROMACS (Chromatin Accessibility Studies) provides a streamlined, GUI-based wor
 
 - Peak Annotation (`ChIPseeker`) ==> builds own txDB by fetching GTF files from ENSEMBL, uses default orgdb from bioconductor;
 
-- Differential Peak Analysis (`Diffbind`) ==> employs diffbind to visualize differential studies and also generates essential up- and downgraded regions; includes annotation of those regions as well
+- Differential Peak Analysis (`Diffbind or NOISeq`) ==> employs Diffbind to visualize differential studies and also generates essential up- and downgraded regions; includes annotation of those regions as well; in absence of biological replicates, users can opt for NOISeq which allows the same differential studies (however, if you have more than one biological replicates, it is recommended to use Diffbind)
 
 
 Designed to assist both beginners and experienced users in analyzing chromatin accessibility with minimal command-line usage
