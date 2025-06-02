@@ -56,7 +56,7 @@ class ATACSeqPipeline:
             "step2": {},  # Trim Galore (and sample names)
             "step3": {},  # Ref genome for alignment, indexing, and sorting
             "step4": {},  # Peak Calling (Genrich or MACS3)
-            "step5": {}  # Peak Annotation, plus diffbind
+            "step5": {}  # Peak Annotation, plus diffbind and noiseq
         }
 
         # Creating a Notebook widget for the wizard steps
@@ -108,20 +108,19 @@ class ATACSeqPipeline:
         self.output_text.config(yscrollcommand=scrollbar.set)
         self.output_text.config(state=tk.DISABLED)  # Make it read-only
 
+    def get_timestamp(self):
+        import datetime
+        return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
     def clear_frame(self, frame):
         for widget in frame.winfo_children():
             widget.destroy()
 
-        # required for diffbind
-        self.conditions = {}
-        self.replicates = {}
-        self.controls = {}
-        self.control_samples = []  # To store available control samples
-
 
     # =================== UI Setup for Each Step =================== #
 
-# Step 1: Selection of raw data and then performing fastqc and multiqc +++++++++++++++++++++++++++++++++++++++++++++++++
+# Step 1: Selection of raw data ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     def setup_step1_ui(self):
         # Output directory widgets
@@ -166,7 +165,6 @@ class ATACSeqPipeline:
         # Save button
         tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="yellow green").grid(
             row=6, column=0, columnspan=3, pady=10)
-
 
 
         # helper functions of step1_ui
@@ -475,7 +473,7 @@ class ATACSeqPipeline:
 
         genome_info = self.genome_map[selected]
 
-        # Use the script's directory, not __file__
+        # Use the script's directory
         script_dir = os.path.dirname(os.path.abspath(__file__))
         ref_dir = os.path.join(script_dir, "ref_genome", genome_info["bowtie_ref"])
 
@@ -1634,7 +1632,8 @@ class ATACSeqPipeline:
                 return
 
             self.root.after(0, self.diffbind_btn.config, {"state": tk.NORMAL})
-            self.update_output_gui("\n✅ Pipeline execution complete!\n")
+            timestamp = self.get_timestamp()
+            self.update_output_gui(f"\n✅ Pipeline execution complete! [{timestamp}]\n")
             # pop-up
             messagebox.showinfo("Pipeline Finished", "✅ All steps have completed successfully!")
 
@@ -2020,7 +2019,8 @@ class ATACSeqPipeline:
                 # On success
                 if exit_code == 0:
                     def on_success():
-                        self.update_output_gui("✅ DiffBind analysis completed successfully!\n")
+                        timestamp = self.get_timestamp()
+                        self.update_output_gui(f"✅ DiffBind analysis completed successfully! [{timestamp}]\n")
                         messagebox.showinfo(
                             "DiffBind Completed",
                             f"Results are in:\n{out_dir}"
@@ -2262,7 +2262,8 @@ class ATACSeqPipeline:
                     self.update_output_gui(line)
                 proc.wait()
                 if proc.returncode == 0:
-                    self.update_output_gui("✅ NOISeq analysis completed!\n")
+                    timestamp = self.get_timestamp()
+                    self.update_output_gui(f"✅ NOISeq analysis completed! [{timestamp}]\n")
                     messagebox.showinfo("Success", f"Results saved to:\n{output_xlsx}")
                 else:
                     self.show_error_gui(f"NOISeq failed with exit code {proc.returncode}")

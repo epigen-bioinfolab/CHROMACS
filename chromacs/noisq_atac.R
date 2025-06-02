@@ -90,8 +90,8 @@ out_df <- data.frame(
   res_all[filtered_rows, , drop = FALSE]
 )
 
-# ============ 📊 Generate Plots ==============
-message("📊 Generating NOISeq diagnostic + volcano + PCA plots...")
+# ============  Generate Plots ==============
+message("Generating NOISeq diagnostic + volcano + PCA plots...")
 plot_file <- file.path(dirname(output_file), "NOISeq_plots.pdf")
 q_threshold <- 0.9
 
@@ -131,9 +131,10 @@ ggplot(pca_df, aes(PC1, PC2, color = condition)) +
   theme_minimal()
 
 dev.off()
-message("✅ Plots saved to: ", plot_file)
+message(" Plots saved to: ", plot_file)
 
-# ============ ✅ Final Output ============
+# ============ Final Output ============
 write.xlsx(out_df, output_file, rowNames = FALSE)
-cat(paste("✅ NOISeq results written to:", output_file, "\n"))
+cat(paste(" NOISeq results written to:", output_file, "\n"))
+
 
