@@ -178,10 +178,21 @@ gr <- GRanges(
 # Annotate peaks
 ann <- annotatePeak(gr, TxDb=txdb, annoDb=org_pkg, tssRegion=c(-3000, 3000))
 
-# Save annotated results
-write.table(as.data.frame(ann),
-            file = file.path(annot_dir, "noisq_annotated.txt"),
-            sep = "\t", quote=FALSE, row.names=FALSE)
+# Clean annotation table
+df_ann <- as.data.frame(ann)
+df_ann[] <- lapply(df_ann, function(x) {
+  if (is.character(x)) {
+    x <- gsub("[\r\n\t]+", " ", x)   # Remove tabs/newlines
+    x <- gsub(" +", " ", x)          # Collapse extra spaces
+    trimws(x)                        # Trim leading/trailing
+  } else x
+})
+
+# Save as TSV
+write.table(df_ann,
+            file = file.path(annot_dir, "noisq_annotated.tsv"),
+            sep = "\t", quote = TRUE, row.names = FALSE)
+
 
 # Generate annotation summary plots - CORRECTED SECTION
 pdf(file.path(annot_dir, "NOISeq_annotation_summary.pdf"), width=8, height=10)

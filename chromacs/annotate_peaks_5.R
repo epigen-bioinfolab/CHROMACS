@@ -185,9 +185,22 @@ process_peak_file <- function(peak_file) {
   gr <- GRanges(peaks[[1]], IRanges(peaks[[2]], peaks[[3]]))
   ann <- annotatePeak(gr, TxDb=txdb, annoDb=info$org_db, tssRegion=c(-3000,3000))
   
+  # Clean annotation fields to remove line breaks/tabs
+  df_ann <- as.data.frame(ann)
+  df_ann[] <- lapply(df_ann, function(x) {
+    if (is.character(x)) {
+      x <- gsub("[\r\n\t]+", " ", x)   # Remove all newline/tab characters
+      x <- gsub(" +", " ", x)          # Collapse multiple spaces
+      trimws(x)                        # Trim leading/trailing spaces
+    } else {
+      x
+    }
+  })
+
+  
   # Save results
-  output_file <- file.path(annotated_dir, paste0(name, "_annotated.txt"))
-  write.table(as.data.frame(ann), output_file, sep="\t", quote=FALSE, row.names=FALSE, col.names=TRUE)
+  output_file <- file.path(annotated_dir, paste0(name, "_annotated.tsv"))
+  write.table(df_ann, output_file, sep="\t", quote=TRUE, row.names=FALSE, col.names=TRUE)
   
   # Generate PDF visualization
   pdf(file.path(annotated_dir, paste0("AnnotVis_", name, "_combined.pdf")))
@@ -195,7 +208,6 @@ process_peak_file <- function(peak_file) {
   grid.newpage()
   grid.text("Annotation Summary", x = 0.5, y = 0.95, gp = gpar(fontsize = 14, fontface = "bold"))
   
-  # Capture summary text 
   summary_text <- capture.output(print(ann))
   if (length(summary_text) > 0) {
     for (i in seq_along(summary_text)) {
@@ -206,6 +218,7 @@ process_peak_file <- function(peak_file) {
   plotAnnoPie(ann)
   dev.off()
 }
+
 
 peaks <- list.files(peak_dir, "\\.(narrowPeak|broadPeak|peak)$", full.names=TRUE)
 lapply(peaks, process_peak_file)

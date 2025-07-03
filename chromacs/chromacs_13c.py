@@ -1873,6 +1873,14 @@ class ATACSeqPipeline:
         self.config_frame = tk.Frame(self.diffbind_window)
         self.config_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky='nw')
 
+        # FDR Threshold Input
+        tk.Label(self.diffbind_window, text="FDR Threshold (0–1):", font=(self.roboto_font, 10)).grid(row=2, column=0,
+                                                                                                      padx=10,
+                                                                                                      sticky='w')
+        self.fdr_threshold = tk.DoubleVar(value=0.05)
+        tk.Spinbox(self.diffbind_window, from_=0.0, to=1.0, increment=0.01, textvariable=self.fdr_threshold,
+                   width=5).grid(row=2, column=1, sticky='w')
+
         # Run button
         tk.Button(self.diffbind_window, text="Run DiffBind",
                   command=self.validate_and_run_diffbind, bg="yellow green").grid(row=3, column=1, pady=10)
@@ -1955,6 +1963,10 @@ class ATACSeqPipeline:
             if not self.controls[peak].get():
                 return self.show_error_gui(f"Control missing for {peak}")
 
+        fdr = self.fdr_threshold.get()
+        if not (0.0 <= fdr <= 1.0):
+            return self.show_error_gui("FDR threshold must be between 0 and 1.")
+
         self.run_diffbind_analysis()
 
     def generate_metadata(self):
@@ -2015,7 +2027,8 @@ class ATACSeqPipeline:
 
         # 3. Build the Rscript command
         r_script_path = resource_filename('chromacs', 'diffbind_3.R')
-        cmd = ["Rscript", r_script_path, out_csv, out_dir]
+        fdr = str(self.fdr_threshold.get())
+        cmd = ["Rscript", r_script_path, out_csv, out_dir, fdr]
 
         # 4. Define the worker that actually calls R
         def worker():
@@ -2128,9 +2141,16 @@ class ATACSeqPipeline:
 
         self.noisq_peak_listbox.bind('<<ListboxSelect>>', lambda e: self.build_noisq_param_rows())
 
+        # NOISeq q-value threshold
+        tk.Label(self.noisq_window, text="Confidence Threshold (NOISeq q, 0–1):",
+                 font=(self.roboto_font, 10)).grid(row=2, column=0, padx=10, sticky='w')
+        self.noisq_qvalue = tk.DoubleVar(value=0.9)
+        tk.Spinbox(self.noisq_window, from_=0.0, to=1.0, increment=0.01,
+                   textvariable=self.noisq_qvalue, width=5).grid(row=2, column=1, sticky='w')
+
         # Run button
         tk.Button(self.noisq_window, text="Run NOISeq",
-                  command=self.run_noisq_gui, bg="light green").grid(row=2, column=1, pady=10)
+                  command=self.run_noisq_gui, bg="light green").grid(row=3, column=1, pady=10)
 
         # annotate button
         tk.Button(
@@ -2138,7 +2158,7 @@ class ATACSeqPipeline:
             text="Annotate NOISeq Results",
             command=self.launch_noisq_annotation,
             bg="cyan"
-        ).grid(row=3, column=1, pady=10)
+        ).grid(row=4, column=1, pady=10)
 
     def populate_noisq_peak_list(self):
         self.noisq_peak_listbox.delete(0, tk.END)
@@ -2267,7 +2287,8 @@ class ATACSeqPipeline:
         r_script = resource_filename('chromacs', 'noisq_atac.R')
         output_xlsx = os.path.join(out_dir, "noisq_results.xlsx")
         counts_csv = os.path.join(out_dir, "peak_matrix.csv")
-        cmd = ["Rscript", r_script, counts_csv, meta_csv, output_xlsx]
+        qval = str(self.noisq_qvalue.get())
+        cmd = ["Rscript", r_script, counts_csv, meta_csv, output_xlsx, qval]
 
         def worker():
             try:

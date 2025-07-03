@@ -7,13 +7,19 @@ library(ggplot2)
 library(ggrepel)
 
 args <- commandArgs(TRUE)
-if (length(args) != 3) {
-  stop("Usage: Rscript noisq_atac.R <peak_counts.csv> <metadata.csv> <output.xlsx>")
+
+if (length(args) != 4) {
+  stop("Usage: Rscript noisq_atac.R <peak_counts.csv> <metadata.csv> <output.xlsx> <qval>")
 }
 
-counts_file <- args[1]
+counts_file  <- args[1]
 metadata_file <- args[2]
-output_file <- args[3]
+output_file   <- args[3]
+q_threshold   <- as.numeric(args[4])
+
+if (is.na(q_threshold) || q_threshold < 0 || q_threshold > 1) {
+  stop("❌ Invalid q-value threshold. Must be between 0 and 1.")
+}
 
 # ===================== Load Data =====================
 counts_dt <- fread(counts_file)
@@ -93,7 +99,6 @@ out_df <- data.frame(
 # ============  Generate Plots ==============
 message("Generating NOISeq diagnostic + volcano + PCA plots...")
 plot_file <- file.path(dirname(output_file), "NOISeq_plots.pdf")
-q_threshold <- 0.9
 
 pdf(plot_file, width = 10, height = 8)
 

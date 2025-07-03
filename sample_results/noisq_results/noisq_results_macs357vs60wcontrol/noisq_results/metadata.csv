@@ -1,3 +1,0 @@
-SampleID,Condition,Peaks,bamReads
-SRR5800657,untreated,/home/geb_mercury/ATAC_seq_project/new_results/peak_files/SRR5800657_SRR2927084.macs3.peak_peaks.narrowPeak,/home/geb_mercury/ATAC_seq_project/new_results/bam_output/SRR5800657.sort.bam
-SRR5800660,treated,/home/geb_mercury/ATAC_seq_project/new_results/peak_files/SRR5800660_SRR2927085.macs3.peak_peaks.narrowPeak,/home/geb_mercury/ATAC_seq_project/new_results/bam_output/SRR5800660.sort.bam

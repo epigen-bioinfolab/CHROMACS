@@ -23,13 +23,13 @@ suppressPackageStartupMessages({
 
 #==============================================================================#
 # Input validation
-if(length(args) != 2) {
-  stop("Usage: Rscript diffbind_3.R <out_csv> <out_dir>") # out_csv = metadata
+if(length(args) < 2) {
+  stop("Usage: Rscript diffbind_3.R <out_csv> <out_dir> [fdr_threshold]")
 }
-
-# Read metadata
 metadata_path <- args[1]
 output_dir <- args[2]
+fdr_thresh <- ifelse(length(args) >= 3, as.numeric(args[3]), 0.05)
+
 
 if(!file.exists(metadata_path)) {
   stop(paste("Metadata file not found:", metadata_path))
@@ -70,7 +70,7 @@ tryCatch({
   dbObj <- dba.analyze(dbObj, bBlacklist = FALSE, bGreylist = FALSE)
   
   # Save results
-  results <- dba.report(dbObj, th = 0.05)
+  results <- dba.report(dbObj, th = fdr_thresh)
   write.csv(as.data.frame(results), 
             file.path(output_dir, "diffbind_results.csv"))
   
@@ -106,7 +106,7 @@ tryCatch({
   write.csv(norm_counts, file.path(output_dir, "normalized_counts.csv"))
   
   # Save DB sites as BED files
-  gr <- dba.report(dbObj, th=0.05, DataType=DBA_DATA_GRANGES)
+  gr <- dba.report(dbObj, th=fdr_thresh, DataType=DBA_DATA_GRANGES)
   rtracklayer::export(gr[gr$Fold > 0], file.path(output_dir, "gain_sites.bed"))
   rtracklayer::export(gr[gr$Fold < 0], file.path(output_dir, "loss_sites.bed"))
   
