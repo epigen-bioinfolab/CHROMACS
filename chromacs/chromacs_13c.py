@@ -162,9 +162,15 @@ class ATACSeqPipeline:
         scrollbar.grid(row=5, column=3, sticky="ns")
         self.sample_listbox.config(yscrollcommand=scrollbar.set)
 
+        tk.Label(self.step1_frame, text="Number of Threads (Default- 8):", font=(self.roboto_font, 10, 'bold')).grid(
+            row=6, column=0, sticky="w", padx=10, pady=5)
+        self.threads_entry = tk.Entry(self.step1_frame, width=10)
+        self.threads_entry.grid(row=6, column=1, padx=10, pady=5)
+        self.threads_entry.insert(0, "8")  # Default value
+
         # Save button
         tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="yellow green").grid(
-            row=6, column=0, columnspan=3, pady=10)
+            row=7, column=0, columnspan=3, pady=10)
 
 
         # helper functions of step1_ui
@@ -247,6 +253,18 @@ class ATACSeqPipeline:
             sample_names.add(sample_name)
 
         self.params["step1"]["auto_sample_names"] = sorted(sample_names)
+
+        # update thread as set by the user
+        threads = self.threads_entry.get().strip()
+        try:
+            threads = int(threads)
+            if threads < 1:
+                raise ValueError("Thread count must be >= 1")
+        except ValueError:
+            threads = 8  # fallback
+            self.update_output_gui("Invalid thread count. Defaulting to 8.\n")
+
+        self.params["threads"] = threads
 
         # Update Step 2 UI
         self.sample_listbox_step2.delete(0, tk.END)
@@ -1065,6 +1083,7 @@ class ATACSeqPipeline:
         multiqc_trimmed = os.path.join(base_out, "multiqc_trimmed")
         normalized_coverage = os.path.join(base_out, "normalized_coverage")
         peak_files = os.path.join(base_out, "peak_files")
+        threads = self.params.get("threads", 8)
 
         try:
 
@@ -1101,7 +1120,7 @@ class ATACSeqPipeline:
                 self.update_output_gui("Running Step 1: FastQC on raw data...\n")
                 # Join selected files into a space-separated string
                 files_to_process = " ".join(raw_files)
-                cmd = f"fastqc -t 8 {files_to_process} -o {fastqc_raw}"
+                cmd = f"fastqc -t {threads} {files_to_process} -o {fastqc_raw}"
                 if not self.run_blocking_command(cmd):
                     return
             else:
@@ -1171,7 +1190,7 @@ class ATACSeqPipeline:
                 )
                 if not all_trimmed_reports_exist:
                     self.update_output_gui("Running Step 4: FastQC on trimmed data...\n")
-                    cmd = f"fastqc -t 8 {trimmed_data}/*.fq.gz -o {fastqc_trimmed}"
+                    cmd = f"fastqc -t {threads} {trimmed_data}/*.fq.gz -o {fastqc_trimmed}"
                     if not self.run_blocking_command(cmd):
                         return
                 else:
@@ -1238,7 +1257,7 @@ class ATACSeqPipeline:
                     self.update_output_gui("Building Bowtie2 index...\n")
                     try:
                         subprocess.run(
-                            f"bowtie2-build --threads 8 {fa_file} {bt2_base}",
+                            f"bowtie2-build --threads {threads} {fa_file} {bt2_base}",
                             shell=True,
                             check=True
                         )
@@ -1362,22 +1381,22 @@ class ATACSeqPipeline:
                     r1 = sample_file_map[sample]["r1"]
                     r2 = sample_file_map[sample]["r2"]
 
-                    cmd = (f"bowtie2 -p 8 --very-sensitive -X 2000 -x {bt2_base} "
+                    cmd = (f"bowtie2 -p {threads} --very-sensitive -X 2000 -x {bt2_base} "
                            f"-1 {r1} -2 {r2} "
-                           f"| samtools view --threads 8 -bS - > {bam_output}/{sample}.bam")
+                           f"| samtools view --threads {threads} -bS - > {bam_output}/{sample}.bam")
                     if not self.run_blocking_command(cmd):
                         return
 
                     if not os.path.exists(name_sorted_bam):
                         self.update_output_gui(f"Name sorting {sample}...\n")
-                        cmd = f"samtools sort -n --threads 8 -o {name_sorted_bam} {bam_output}/{sample}.bam && rm {bam_output}/{sample}.bam"
+                        cmd = f"samtools sort -n --threads {threads} -o {name_sorted_bam} {bam_output}/{sample}.bam && rm {bam_output}/{sample}.bam"
                         if not self.run_blocking_command(cmd):
                             return
                     else:
                         self.update_output_gui(f"Skipping name sorting for {sample} (Name-sorted BAM exists)\n")
 
                     self.update_output_gui(f"Coordinate sorting {sample}...\n")
-                    cmd = f"samtools sort --threads 8 -o {coord_sorted_bam} {name_sorted_bam} && samtools index -@ 8 {coord_sorted_bam}"
+                    cmd = f"samtools sort --threads {threads} -o {coord_sorted_bam} {name_sorted_bam} && samtools index -@ {threads} {coord_sorted_bam}"
                     if not self.run_blocking_command(cmd):
                         return
                 else:
@@ -1431,7 +1450,7 @@ class ATACSeqPipeline:
                 coverage_bw = os.path.join(normalized_coverage, f"{sample}.normalized.bw")
                 if not os.path.exists(coverage_bw):
                     self.update_output_gui(f"Generating coverage for {sample}...\n")
-                    cmd = f"bamCoverage -p 8 -of bigwig --normalizeUsing=RPKM -v -b {bam_output}/{sample}.sort.bam -o {coverage_bw}"
+                    cmd = f"bamCoverage -p {threads} -of bigwig --normalizeUsing=RPKM -v -b {bam_output}/{sample}.sort.bam -o {coverage_bw}"
                     if not self.run_blocking_command(cmd):
                         return
                 else:
@@ -1535,9 +1554,9 @@ class ATACSeqPipeline:
 
                     cmd = (
                         f"samtools fixmate -m {name_sorted_bam} {fixed_bam} && "
-                        f"samtools sort --threads 8 -o {coord_bam} {fixed_bam} && "
-                        f"samtools markdup -r --threads 8 {coord_bam} {dedup_bam} && "
-                        f"samtools index -@ 8 {dedup_bam}"
+                        f"samtools sort --threads {threads} -o {coord_bam} {fixed_bam} && "
+                        f"samtools markdup -r --threads {threads} {coord_bam} {dedup_bam} && "
+                        f"samtools index -@ {threads} {dedup_bam}"
                     )
                     if not self.run_blocking_command(cmd):
                         return
@@ -1564,9 +1583,9 @@ class ATACSeqPipeline:
 
                     cmd = (
                         f"samtools fixmate -m {name_sorted_bam} {fixed_bam} && "
-                        f"samtools sort --threads 8 -o {coord_bam} {fixed_bam} && "
-                        f"samtools markdup -r --threads 8 {coord_bam} {dedup_bam} && "
-                        f"samtools index -@ 8 {dedup_bam}"
+                        f"samtools sort --threads {threads} -o {coord_bam} {fixed_bam} && "
+                        f"samtools markdup -r --threads {threads} {coord_bam} {dedup_bam} && "
+                        f"samtools index -@ {threads} {dedup_bam}"
                     )
                     if not self.run_blocking_command(cmd):
                         return
@@ -2188,6 +2207,7 @@ class ATACSeqPipeline:
         metadata_df = self.generate_noisq_metadata()
         meta_csv = os.path.join(out_dir, "metadata.csv")
         metadata_df.to_csv(meta_csv, index=False)
+        threads = self.params.get("threads", 8)
 
         # Generate consensus peaks and count matrix
         try:
@@ -2212,7 +2232,7 @@ class ATACSeqPipeline:
             bam_files = metadata_df["bamReads"].tolist()
             count_matrix = os.path.join(out_dir, "peak_counts.txt")
             feature_cmd = (
-                f"featureCounts -a {saf_file} -F SAF -T 8 -p -B -C "
+                f"featureCounts -a {saf_file} -F SAF -T {threads} -p -B -C "
                 f"-o {count_matrix} {' '.join(bam_files)}"
             )
             result = subprocess.run(feature_cmd, shell=True, check=True, capture_output=True, text=True)
