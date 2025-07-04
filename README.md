@@ -1,11 +1,11 @@
-# **CHROMACS_V1**
-> **Graphical user interface for chromatin accessibility studies from ATAC-seq datasets**
+# **ChromAcS**
+> **Graphical user interface for Chromatin Accessibility Studies from ATAC-seq datasets**
 
 
 
 ## 📖 About
 
-CHROMACS (Chromatin Accessibility Studies) provides a streamlined, GUI-based workflow for analyzing ATAC-seq data, including:
+ChromAcS (Chromatin Accessibility Studies) provides a streamlined, GUI-based workflow for analyzing ATAC-seq data, including:
 
 - Quality Control (`FastQC, MultiQC`) ==> of both raw reads and trimmed reads;
 
