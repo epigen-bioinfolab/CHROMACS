@@ -1,0 +1,2 @@
+[console_scripts]
+chromacs = chromacs.chromacs_13c:main

@@ -10,7 +10,12 @@ setup(
     ],
     include_package_data=True,
     package_data={
-        'chromacs': ['*.R'],
+        'chromacs': [
+            '*.R',
+            'assets/*.png',
+            'assets/*.xbm',
+            'fonts/*.ttf',
+        ],
     },
     entry_points={
         'console_scripts': [
@@ -18,4 +23,5 @@ setup(
         ],
     },
 )
+
 
