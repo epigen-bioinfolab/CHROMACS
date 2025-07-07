@@ -1926,9 +1926,27 @@ class ATACSeqPipeline:
         tk.Spinbox(self.diffbind_window, from_=0.0, to=1.0, increment=0.01, textvariable=self.fdr_threshold,
                    width=5).grid(row=2, column=1, sticky='w')
 
+        # Thread count input
+        tk.Label(self.diffbind_window, text="Number of Threads (default = 8):", font=(self.roboto_font, 10)).grid(
+            row=4, column=0, sticky='w', padx=10)
+        self.diffbind_threads = tk.StringVar(value="8")  # default is 8
+        tk.Entry(self.diffbind_window, textvariable=self.diffbind_threads, width=5).grid(
+            row=4, column=1, sticky='w')
+
+        # Instruction label (centered)
+        instruction_1 = (
+            "Note: DiffBind is very memory intensive tool, so adjust your thread here accordingly\n"
+            "      If run fails with error in the core setup, adjust (decrease thread count) and rerun DiffBind\n"
+        )
+        tk.Label(
+            self.diffbind_window, text=instruction_1,
+            wraplength=650, justify=tk.LEFT, anchor="w",
+            font=(self.roboto_font, 9)
+        ).grid(row=6, column=1, padx=10, sticky="w")
+
         # Run button
         tk.Button(self.diffbind_window, text="Run DiffBind",
-                  command=self.validate_and_run_diffbind, bg="yellow green").grid(row=3, column=1, pady=10)
+                  command=self.validate_and_run_diffbind, bg="yellow green").grid(row=8, column=1, pady=10)
 
         # Initialize metadata stores
         self.conditions = {}
@@ -1943,7 +1961,7 @@ class ATACSeqPipeline:
             text="Annotate Results",
             command=self.launch_diffbind_annotation,
             bg="cyan"
-        ).grid(row=3, column=2, pady=10)
+        ).grid(row=9, column=1, pady=10)
 
     def populate_peak_list(self):
         self.peak_listbox.delete(0, tk.END)
@@ -2056,24 +2074,24 @@ class ATACSeqPipeline:
 
     def run_diffbind_analysis(self):
 
-        # 1. Generate and save the metadata sheet
-        df = self.generate_metadata()
-        base_dir = self.params["step1"]["base_output_dir"]
-        out_csv = os.path.join(base_dir, "diffbind_samplesheet.csv")
-        df.to_csv(out_csv, index=False)
-        messagebox.showinfo(
-            "Metadata Saved",
-            f"Metadata sheet written to:\n{out_csv}"
-        )
 
-        # 2. Prepare output directory
+        # 1. Prepare output directory
+        base_dir = self.params["step1"]["base_output_dir"]
         out_dir = os.path.join(base_dir, "diffbind_results")
         os.makedirs(out_dir, exist_ok=True)
+
+        # 2. Generate and save the metadata sheet
+        df = self.generate_metadata()
+        out_csv = os.path.join(out_dir, "diffbind_samplesheet.csv")
+        df.to_csv(out_csv, index=False)
 
         # 3. Build the Rscript command
         r_script_path = resource_filename('chromacs', 'diffbind_3.R')
         fdr = str(self.fdr_threshold.get())
-        cmd = ["Rscript", r_script_path, out_csv, out_dir, fdr]
+        threads = self.diffbind_threads.get().strip()
+        threads = threads if threads.isdigit() and int(threads) > 0 else "8"  # Fallback to 8 if invalid
+
+        cmd = ["Rscript", r_script_path, out_csv, out_dir, fdr, threads]
 
         # 4. Define the worker that actually calls R
         def worker():

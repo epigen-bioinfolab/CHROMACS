@@ -29,6 +29,12 @@ if(length(args) < 2) {
 metadata_path <- args[1]
 output_dir <- args[2]
 fdr_thresh <- ifelse(length(args) >= 3, as.numeric(args[3]), 0.05)
+threads <- ifelse(length(args) >= 4, as.integer(args[4]), 8)
+if (is.na(threads) || threads <= 0) {
+  threads <- 8
+}
+options(mc.cores=threads)
+message("Using ", threads, " threads for parallel processing.")
 
 
 if(!file.exists(metadata_path)) {
