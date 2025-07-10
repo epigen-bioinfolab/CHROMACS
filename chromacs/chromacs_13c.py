@@ -14,9 +14,9 @@ import gzip
 import shutil
 import webbrowser
 
+
 # font setup
 def load_custom_font(root):
-
     font_path = resource_filename("chromacs", "fonts/Roboto-Regular.ttf")
 
     if os.path.exists(font_path):
@@ -31,8 +31,6 @@ def load_custom_font(root):
     else:
         print(f"Custom font file not found at {font_path}. Using system default font.")
         return None
-
-
 
 
 class ATACSeqPipeline:
@@ -126,7 +124,6 @@ class ATACSeqPipeline:
         self.notebook.tab(3, state="disabled")
         self.notebook.tab(4, state="disabled")
 
-
         # Building each step's UI
         self.setup_step1_ui()
         self.setup_step2_ui()
@@ -152,40 +149,49 @@ class ATACSeqPipeline:
         self.output_text.config(yscrollcommand=scrollbar.set)
         self.output_text.config(state=tk.DISABLED)
 
-
     def get_timestamp(self):
         import datetime
         return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
 
     def clear_frame(self, frame):
         for widget in frame.winfo_children():
             widget.destroy()
 
-
     # =================== UI Setup for Each Step =================== #
 
-# Step 1: Selection of raw data ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # Step 1: Selection of raw data ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
     def setup_step1_ui(self):
         # Output directory widgets
-        tk.Label(self.step1_frame, text="Base Output Directory:", font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step1_frame, text="Base Output Directory:", font=(self.roboto_font, 10, 'bold')).grid(row=0,
+                                                                                                            column=0,
+                                                                                                            sticky="w",
+                                                                                                            padx=10,
+                                                                                                            pady=5)
         self.output_dir = tk.Entry(self.step1_frame, width=50)
         self.output_dir.grid(row=0, column=1, padx=10, pady=5)
-        tk.Button(self.step1_frame, text="Browse", command=self.browse_output_dir, bg= 'grey').grid(row=0, column=2, padx=10, pady=5)
+        tk.Button(self.step1_frame, text="Browse", command=self.browse_output_dir, bg='grey').grid(row=0, column=2,
+                                                                                                   padx=10, pady=5)
 
         instruction_text_2 = " [Assign the Base Output Directory where all the corresponding results will be saved. ]"
-        tk.Label(self.step1_frame, text=instruction_text_2, wraplength=600, justify=tk.LEFT, anchor="w", font=(self.roboto_font, 9, 'italic')
-        ).grid(row=1, column=0, columnspan=3, padx=10, pady=5, sticky="w")
+        tk.Label(self.step1_frame, text=instruction_text_2, wraplength=600, justify=tk.LEFT, anchor="w",
+                 font=(self.roboto_font, 9, 'italic')
+                 ).grid(row=1, column=0, columnspan=3, padx=10, pady=5, sticky="w")
 
-        tk.Label(self.step1_frame, text="Raw Data Directory:", font=(self.roboto_font, 10, 'bold')).grid(row=2, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step1_frame, text="Raw Data Directory:", font=(self.roboto_font, 10, 'bold')).grid(row=2,
+                                                                                                         column=0,
+                                                                                                         sticky="w",
+                                                                                                         padx=10,
+                                                                                                         pady=5)
         self.raw_data_dir = tk.Entry(self.step1_frame, width=50)
         self.raw_data_dir.grid(row=2, column=1, padx=10, pady=5)
-        tk.Button(self.step1_frame, text="Browse", command=self.browse_raw_data, bg= 'grey').grid(row=2, column=2, padx=10, pady=5)
+        tk.Button(self.step1_frame, text="Browse", command=self.browse_raw_data, bg='grey').grid(row=2, column=2,
+                                                                                                 padx=10, pady=5)
 
         instruction_text_1 = "[ If 'Select specific samples' is unchecked, ALL FASTQ files in the RAW DATA DIRECTORY will be processed. ]"
-        tk.Label(self.step1_frame, text=instruction_text_1, wraplength=600, justify=tk.LEFT, anchor="w", font=(self.roboto_font, 9, 'italic')
-        ).grid(row=3, column=0, columnspan=3, padx=10, pady=5, sticky="w")
+        tk.Label(self.step1_frame, text=instruction_text_1, wraplength=600, justify=tk.LEFT, anchor="w",
+                 font=(self.roboto_font, 9, 'italic')
+                 ).grid(row=3, column=0, columnspan=3, padx=10, pady=5, sticky="w")
 
         # Checkbox for selective sample selection
         self.select_samples_var = tk.BooleanVar(value=False)
@@ -216,7 +222,6 @@ class ATACSeqPipeline:
         # Save button
         tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="yellow green").grid(
             row=7, column=0, columnspan=3, pady=10)
-
 
         # helper functions of step1_ui
 
@@ -319,8 +324,7 @@ class ATACSeqPipeline:
         self.notebook.tab(1, state="normal")
         self.notebook.select(1)
 
-
-# Step 2: Trim Galore and Sample Names +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # Step 2: Trim Galore and Sample Names +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def setup_step2_ui(self):
         tk.Label(self.step2_frame, text="Auto-Detected Sample Names:", font=(self.roboto_font, 10, 'bold')).grid(
             row=0, column=0, sticky="w", padx=10, pady=5)
@@ -341,10 +345,12 @@ class ATACSeqPipeline:
 
         self.skip_trimming_var = tk.BooleanVar(value=False)
         tk.Checkbutton(self.step2_frame, text="Skip Trimming (Use Raw Data for Alignment)",
-                       variable=self.skip_trimming_var, font=(self.roboto_font, 10, 'bold')).grid(row=4, column=0, columnspan=2, padx=10, pady=5)
+                       variable=self.skip_trimming_var, font=(self.roboto_font, 10, 'bold')).grid(row=4, column=0,
+                                                                                                  columnspan=2, padx=10,
+                                                                                                  pady=5)
 
         # Instructional text
-        instruction_3= (
+        instruction_3 = (
             "Checking this will skip the tirmming done by Trim Galore.\n"
             "Raw data will be used directly for alignment.\n"
             "Please check the FastQC and MultiQC reports if you are unsure of this step. \n"
@@ -354,9 +360,12 @@ class ATACSeqPipeline:
                  font=(self.roboto_font, 9, 'italic')
                  ).grid(row=5, column=1, columnspan=3, padx=10, pady=5, sticky="w")
 
-        tk.Button(self.step2_frame, text="Save & Next", command=self.save_step2_next, bg="yellow green").grid(row=7, column=1, pady=5)
-        tk.Button(self.step2_frame, text="Back", command=lambda: self.notebook.select(0), bg= 'salmon').grid(row=7, column=0, pady=5)
-
+        tk.Button(self.step2_frame, text="Save & Next", command=self.save_step2_next, bg="yellow green").grid(row=7,
+                                                                                                              column=1,
+                                                                                                              pady=5)
+        tk.Button(self.step2_frame, text="Back", command=lambda: self.notebook.select(0), bg='salmon').grid(row=7,
+                                                                                                            column=0,
+                                                                                                            pady=5)
 
         # helper functions of step2_ui
 
@@ -372,8 +381,7 @@ class ATACSeqPipeline:
         self.notebook.tab(2, state="normal")
         self.notebook.select(2)
 
-
-# Step 3: Alignment Settings +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+    # Step 3: Alignment Settings +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
     def setup_step3_ui(self):
         # Genome mapping with valid MACS3 parameters
         self.genome_map = {
@@ -511,10 +519,14 @@ class ATACSeqPipeline:
         }
 
         # Genome selection
-        tk.Label(self.step3_frame, text="Select Organism/Genome:", font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step3_frame, text="Select Organism/Genome:", font=(self.roboto_font, 10, 'bold')).grid(row=0,
+                                                                                                             column=0,
+                                                                                                             sticky="w",
+                                                                                                             padx=10,
+                                                                                                             pady=5)
         self.genome_var = tk.StringVar()
         self.genome_menu = ttk.Combobox(self.step3_frame, textvariable=self.genome_var,
-                                    values=list(self.genome_map.keys()), state="readonly")
+                                        values=list(self.genome_map.keys()), state="readonly")
         self.genome_menu.grid(row=0, column=1, padx=10, pady=5)
 
         # Reference status indicator
@@ -522,11 +534,15 @@ class ATACSeqPipeline:
         self.ref_status.grid(row=1, column=1, sticky="w", padx=10, pady=5)
 
         # Buttons
-        tk.Button(self.step3_frame, text="Check Reference", command=self.check_reference, bg="gray").grid(row=2, column=1, pady=5)
-        tk.Button(self.step3_frame, text="Save & Next", command=self.save_step3_next, bg="yellow green").grid(row=3, column=1,
-                                                                                                   pady=5)
-        tk.Button(self.step3_frame, text="Back", command=lambda: self.notebook.select(1), bg="salmon").grid(row=3, column=0,
-                                                                                                     pady=5)
+        tk.Button(self.step3_frame, text="Check Reference", command=self.check_reference, bg="gray").grid(row=2,
+                                                                                                          column=1,
+                                                                                                          pady=5)
+        tk.Button(self.step3_frame, text="Save & Next", command=self.save_step3_next, bg="yellow green").grid(row=3,
+                                                                                                              column=1,
+                                                                                                              pady=5)
+        tk.Button(self.step3_frame, text="Back", command=lambda: self.notebook.select(1), bg="salmon").grid(row=3,
+                                                                                                            column=0,
+                                                                                                            pady=5)
 
     def check_reference(self):
         selected = self.genome_var.get()
@@ -603,8 +619,12 @@ class ATACSeqPipeline:
 
     def setup_step4_ui(self):
         tk.Label(self.step4_frame, text="Peak Calling", font=("Arial", 16, "bold")).grid(row=0, column=0,
-                                                                                                 columnspan=2, pady=10)
-        tk.Label(self.step4_frame, text="Select Peak Caller:", font=(self.roboto_font, 10, 'bold')).grid(row=1, column=0, sticky="w", padx=10, pady=5)
+                                                                                         columnspan=2, pady=10)
+        tk.Label(self.step4_frame, text="Select Peak Caller:", font=(self.roboto_font, 10, 'bold')).grid(row=1,
+                                                                                                         column=0,
+                                                                                                         sticky="w",
+                                                                                                         padx=10,
+                                                                                                         pady=5)
         self.peak_caller_choice = tk.StringVar(value="Genrich")
         tk.Radiobutton(self.step4_frame, text="Genrich", variable=self.peak_caller_choice, value="Genrich").grid(row=2,
                                                                                                                  column=0,
@@ -614,10 +634,13 @@ class ATACSeqPipeline:
                                                                                                              column=1,
                                                                                                              sticky="w",
                                                                                                              padx=10)
-        tk.Button(self.step4_frame, text="Save & Next", command=self.save_step4_next, bg="yellow green").grid(row=3, column=2,
-                                                                                                      columnspan=3,
-                                                                                                      pady=10)
-        tk.Button(self.step4_frame, text="Back", command=lambda: self.notebook.select(2), bg='salmon').grid(row=3, column=0, pady=10)
+        tk.Button(self.step4_frame, text="Save & Next", command=self.save_step4_next, bg="yellow green").grid(row=3,
+                                                                                                              column=2,
+                                                                                                              columnspan=3,
+                                                                                                              pady=10)
+        tk.Button(self.step4_frame, text="Back", command=lambda: self.notebook.select(2), bg='salmon').grid(row=3,
+                                                                                                            column=0,
+                                                                                                            pady=10)
 
     def save_step4_next(self):
         self.params["step4"]["peak_caller"] = self.peak_caller_choice.get().strip()
@@ -632,7 +655,9 @@ class ATACSeqPipeline:
         self.clear_frame(self.step4_frame)
         tk.Label(self.step4_frame, text="Genrich Peak Calling", font=("Arial", 16, "bold")).grid(
             row=0, column=0, columnspan=3, pady=10)
-        tk.Label(self.step4_frame, text="Select Peak Type:", font=(self.roboto_font, 10, 'bold')).grid(row=1, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Select Peak Type:", font=(self.roboto_font, 10, 'bold')).grid(row=1, column=0,
+                                                                                                       sticky="w",
+                                                                                                       padx=10, pady=5)
         self.peak_type_choice = tk.StringVar(value="merged")
         self.peak_type_choice.trace("w", lambda *args: self.toggle_merged_output_field())
         tk.Radiobutton(self.step4_frame, text="Merged", variable=self.peak_type_choice, value="merged").grid(
@@ -658,7 +683,9 @@ class ATACSeqPipeline:
             return
 
         # Test samples
-        tk.Label(self.step4_frame, text="Test Samples:", font=(self.roboto_font, 10, 'bold')).grid(row=3, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Test Samples:", font=(self.roboto_font, 10, 'bold')).grid(row=3, column=0,
+                                                                                                   sticky="w", padx=10,
+                                                                                                   pady=5)
         self.treated_sample_var = tk.StringVar(value="Select a test sample")
         treated_dropdown = tk.OptionMenu(self.step4_frame, self.treated_sample_var, *step2_samples)
         treated_dropdown.grid(row=3, column=1, padx=10, pady=5)
@@ -678,7 +705,9 @@ class ATACSeqPipeline:
                  ).grid(row=3, column=4, columnspan=4, padx=10, pady=5, sticky="w")
 
         # Control samples
-        tk.Label(self.step4_frame, text="Control Samples:", font=(self.roboto_font, 10, 'bold')).grid(row=4, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Control Samples:", font=(self.roboto_font, 10, 'bold')).grid(row=4, column=0,
+                                                                                                      sticky="w",
+                                                                                                      padx=10, pady=5)
         self.control_sample_var = tk.StringVar(value="Select a control sample")
         control_dropdown = tk.OptionMenu(self.step4_frame, self.control_sample_var, *step2_samples)
         control_dropdown.grid(row=4, column=1, padx=10, pady=5)
@@ -687,30 +716,70 @@ class ATACSeqPipeline:
         tk.Button(self.step4_frame, text="Add Control Sample", command=self.add_control_sample, bg='gray').grid(
             row=4, column=3, padx=10, pady=5)
 
+        # Instructional text
+        instruction_1 = (
+            "Note: You can skip this Control section, if there is none\n"
+            "Please keep in mind that these are not biological controls, rather technical controls\n"
+            "Do NOT put untreated condition as control here\n"
+        )
+
+        tk.Label(self.step4_frame, text=instruction_1, wraplength=600, justify=tk.LEFT, anchor="w",
+                 font=(self.roboto_font, 9, 'italic')
+                 ).grid(row=4, column=4, columnspan=4, padx=10, pady=5, sticky="w")
+
         # Blacklist files
-        tk.Label(self.step4_frame, text="Select Blacklist Files:", font=(self.roboto_font, 10, 'bold')).grid(row=5, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Select Blacklist Files:", font=(self.roboto_font, 10, 'bold')).grid(row=5,
+                                                                                                             column=0,
+                                                                                                             sticky="w",
+                                                                                                             padx=10,
+                                                                                                             pady=5)
         self.blacklist_listbox = tk.Listbox(self.step4_frame, selectmode=tk.MULTIPLE, height=5, width=50)
         self.blacklist_listbox.grid(row=5, column=1, padx=10, pady=5)
-        tk.Button(self.step4_frame, text="Add Files", command=self.browse_blacklist_files, bg='gray').grid(row=5, column=2,
-                                                                                                padx=10, pady=5)
-        tk.Button(self.step4_frame, text="Remove Selected", command=self.remove_blacklist_files, bg='gray').grid(row=5, column=3,
-                                                                                                      padx=10, pady=5)
+        tk.Button(self.step4_frame, text="Add Files", command=self.browse_blacklist_files, bg='gray').grid(row=5,
+                                                                                                           column=2,
+                                                                                                           padx=10,
+                                                                                                           pady=5)
+        tk.Button(self.step4_frame, text="Remove Selected", command=self.remove_blacklist_files, bg='gray').grid(row=5,
+                                                                                                                 column=3,
+                                                                                                                 padx=10,
+                                                                                                                 pady=5)
+
+        # Instructional text
+        instruction_1 = (
+            "Note: You can download blacklist from our Github page\n"
+            "You can skip this part if you are unable to obtain a blacklist for your target organism\n"
+            "Please ensure that you are using blacklists from the appropriate assembly versions\n"
+        )
+
+        tk.Label(self.step4_frame, text=instruction_1, wraplength=600, justify=tk.LEFT, anchor="w",
+                 font=(self.roboto_font, 9, 'italic')
+                 ).grid(row=5, column=4, columnspan=4, padx=10, pady=5, sticky="w")
 
         # Exclude chromosomes
-        tk.Label(self.step4_frame, text="Exclude Chromosomes:", font=(self.roboto_font, 10, 'bold')).grid(row=6, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Exclude Chromosomes:", font=(self.roboto_font, 10, 'bold')).grid(row=6,
+                                                                                                          column=0,
+                                                                                                          sticky="w",
+                                                                                                          padx=10,
+                                                                                                          pady=5)
         self.exclude_chr_m = tk.BooleanVar(value=False)
         self.exclude_chr_y = tk.BooleanVar(value=False)
-        tk.Checkbutton(self.step4_frame, text="Exclude MT (mitochondrial chromosomes)", variable=self.exclude_chr_m).grid(row=6, column=1,
-                                                                                                padx=10, pady=5)
+        tk.Checkbutton(self.step4_frame, text="Exclude MT (mitochondrial chromosomes)",
+                       variable=self.exclude_chr_m).grid(row=6, column=1,
+                                                         padx=10, pady=5)
         tk.Checkbutton(self.step4_frame, text="Exclude Y", variable=self.exclude_chr_y).grid(row=6, column=2,
-                                                                                                padx=10, pady=5)
-        #chromosome exclusion entry
-        tk.Label(self.step4_frame, text="Custom Chromosomes for Exclusion").grid(row=6, column=3, sticky="w", padx=10, pady=5)
+                                                                                             padx=10, pady=5)
+        # chromosome exclusion entry
+        tk.Label(self.step4_frame, text="Custom Chromosomes for Exclusion").grid(row=6, column=3, sticky="w", padx=10,
+                                                                                 pady=5)
         self.custom_chr_entry = tk.Entry(self.step4_frame, width=30)
         self.custom_chr_entry.grid(row=6, column=4, padx=10, pady=5)
 
         # expand_cut_sites
-        tk.Label(self.step4_frame, text='Expand cut-sites to _ bp:', font=(self.roboto_font, 10, 'bold')).grid(row=7, column=0, padx=10, pady=5, sticky='w')
+        tk.Label(self.step4_frame, text='Expand cut-sites to _ bp:', font=(self.roboto_font, 10, 'bold')).grid(row=7,
+                                                                                                               column=0,
+                                                                                                               padx=10,
+                                                                                                               pady=5,
+                                                                                                               sticky='w')
         self.expand_cut_sites_var = tk.StringVar(value="100")
         self.expand_cut_combobox = ttk.Combobox(
             self.step4_frame,
@@ -731,7 +800,10 @@ class ATACSeqPipeline:
                  ).grid(row=7, column=4, columnspan=6, padx=10, pady=5, sticky="w")
 
         # max_q_value
-        tk.Label(self.step4_frame, text='Assign Max q-value (0 to 1):', font=(self.roboto_font, 10, 'bold')).grid(row=8, column=0, padx=10, pady=5)
+        tk.Label(self.step4_frame, text='Assign Max q-value (0 to 1):', font=(self.roboto_font, 10, 'bold')).grid(row=8,
+                                                                                                                  column=0,
+                                                                                                                  padx=10,
+                                                                                                                  pady=5)
         self.max_q_value_var = tk.StringVar(value="0.05")
         self.max_q_combobox = ttk.Combobox(
             self.step4_frame,
@@ -740,9 +812,9 @@ class ATACSeqPipeline:
         )
         self.max_q_combobox.grid(row=8, column=1, padx=10, pady=5)
 
-
         # Merged output name
-        self.merged_output_label = tk.Label(self.step4_frame, text="Merged Output Name:", font=(self.roboto_font, 10, 'bold'))
+        self.merged_output_label = tk.Label(self.step4_frame, text="Merged Output Name:",
+                                            font=(self.roboto_font, 10, 'bold'))
         self.merged_output_label.grid(row=9, column=0, sticky="w", padx=10, pady=5)
         self.merged_output_name_var = tk.StringVar()
         self.merged_output_entry = tk.Entry(self.step4_frame, textvariable=self.merged_output_name_var, width=30)
@@ -756,9 +828,10 @@ class ATACSeqPipeline:
             bg="yellow green"
         )
         self.save_button.grid(row=12, column=0, columnspan=3, pady=10)
-        tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='salmon').grid(row=12,
-                                                                                                        column=0,
-                                                                                                        pady=10)
+        tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='salmon').grid(
+            row=12,
+            column=0,
+            pady=10)
 
     def save_step4a_settings(self):
         self.params["step4"]["peak_type"] = self.peak_type_choice.get().strip()
@@ -829,7 +902,6 @@ class ATACSeqPipeline:
         else:
             print("Control sample not added.")
 
-
     def browse_blacklist_files(self):
         files = filedialog.askopenfilenames(
             title="Select Blacklist Files",
@@ -869,7 +941,9 @@ class ATACSeqPipeline:
             return
 
         # Test samples dropdown + Listbox
-        tk.Label(self.step4_frame, text="Test Samples:", font=(self.roboto_font, 10, 'bold')).grid(row=2, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Test Samples:", font=(self.roboto_font, 10, 'bold')).grid(row=2, column=0,
+                                                                                                   sticky="w", padx=10,
+                                                                                                   pady=5)
         self.treated_sample_var = tk.StringVar(value="Select a test sample")
         treated_dropdown = tk.OptionMenu(self.step4_frame, self.treated_sample_var, *step2_samples)
 
@@ -890,7 +964,9 @@ class ATACSeqPipeline:
                  ).grid(row=2, column=4, columnspan=4, padx=10, pady=5, sticky="w")
 
         # Control samples dropdown + Listbox
-        tk.Label(self.step4_frame, text="Control Samples:", font=(self.roboto_font, 10, 'bold')).grid(row=3, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Control Samples:", font=(self.roboto_font, 10, 'bold')).grid(row=3, column=0,
+                                                                                                      sticky="w",
+                                                                                                      padx=10, pady=5)
         self.control_sample_var = tk.StringVar(value="Select a control sample")
         control_dropdown = tk.OptionMenu(self.step4_frame, self.control_sample_var, *step2_samples)
         control_dropdown.grid(row=3, column=1, padx=10, pady=5)
@@ -902,8 +978,9 @@ class ATACSeqPipeline:
 
         # Instructional text
         instruction_1 = (
-            "Select one by one: click on a sample and then click on \'Add Control Sample\'\n"
-            "Repeat this for the next sample; you can ADD MULTIPLE SAMPLES at a time  \n"
+            "Note: You can skip this Control section, if there is none\n"
+            "Please keep in mind that these are not biological controls, rather technical controls\n"
+            "Do NOT put untreated condition as control here\n"
         )
 
         tk.Label(self.step4_frame, text=instruction_1, wraplength=600, justify=tk.LEFT, anchor="w",
@@ -911,32 +988,57 @@ class ATACSeqPipeline:
                  ).grid(row=3, column=4, columnspan=4, padx=10, pady=5, sticky="w")
 
         # Blacklist file selection
-        tk.Label(self.step4_frame, text="Select Blacklist Files:", font=(self.roboto_font, 10, 'bold')).grid(row=4, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Select Blacklist Files:", font=(self.roboto_font, 10, 'bold')).grid(row=4,
+                                                                                                             column=0,
+                                                                                                             sticky="w",
+                                                                                                             padx=10,
+                                                                                                             pady=5)
         self.blacklist_listbox = tk.Listbox(self.step4_frame, selectmode=tk.MULTIPLE, height=5, width=50)
         self.blacklist_listbox.grid(row=4, column=1, padx=10, pady=5)
-        tk.Button(self.step4_frame, text="Add Files", command=self.browse_blacklist_files, bg='gray').grid(row=4, column=2,
-                                                                                                padx=10, pady=5)
-        tk.Button(self.step4_frame, text="Remove Selected", command=self.remove_blacklist_files, bg='gray').grid(row=4, column=3,
-                                                                                                      padx=10, pady=5)
+        tk.Button(self.step4_frame, text="Add Files", command=self.browse_blacklist_files, bg='gray').grid(row=4,
+                                                                                                           column=2,
+                                                                                                           padx=10,
+                                                                                                           pady=5)
+        tk.Button(self.step4_frame, text="Remove Selected", command=self.remove_blacklist_files, bg='gray').grid(row=4,
+                                                                                                                 column=3,
+                                                                                                                 padx=10,
+                                                                                                                 pady=5)
+
+        # Instructional text
+        instruction_1 = (
+            "Note: You can download blacklist from our Github page\n"
+            "You can skip this part if you are unable to obtain a blacklist for your target organism\n"
+            "Please ensure that you are using blacklists from the appropriate assembly versions\n"
+        )
+
+        tk.Label(self.step4_frame, text=instruction_1, wraplength=600, justify=tk.LEFT, anchor="w",
+                 font=(self.roboto_font, 9, 'italic')
+                 ).grid(row=4, column=4, columnspan=4, padx=10, pady=5, sticky="w")
 
         # Options for excluding chromosomes
-        tk.Label(self.step4_frame, text="Exclude Chromosomes:", font=(self.roboto_font, 10, 'bold')).grid(row=5, column=0, sticky="w", padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Exclude Chromosomes:", font=(self.roboto_font, 10, 'bold')).grid(row=5,
+                                                                                                          column=0,
+                                                                                                          sticky="w",
+                                                                                                          padx=10,
+                                                                                                          pady=5)
         self.exclude_chr_m = tk.BooleanVar(value=False)
         self.exclude_chr_y = tk.BooleanVar(value=False)
-        tk.Checkbutton(self.step4_frame, text="Exclude MT (Mitochondrial chromosomes)", variable=self.exclude_chr_m).grid(row=5, column=1,
-                                                                                                padx=10, pady=5)
+        tk.Checkbutton(self.step4_frame, text="Exclude MT (Mitochondrial chromosomes)",
+                       variable=self.exclude_chr_m).grid(row=5, column=1,
+                                                         padx=10, pady=5)
         tk.Checkbutton(self.step4_frame, text="Exclude Y", variable=self.exclude_chr_y).grid(row=5, column=2,
-                                                                                                padx=10, pady=5)
-        tk.Label(self.step4_frame, text="Custom Chromosomes for Exclusion").grid(row=5, column=3, sticky="w", padx=10, pady=5)
+                                                                                             padx=10, pady=5)
+        tk.Label(self.step4_frame, text="Custom Chromosomes for Exclusion").grid(row=5, column=3, sticky="w", padx=10,
+                                                                                 pady=5)
         self.custom_chr_entry = tk.Entry(self.step4_frame, width=30)
         self.custom_chr_entry.grid(row=5, column=4, padx=10, pady=5)
 
         # Q-value selection
         tk.Label(self.step4_frame, text='Assign Max q-value (0 to 1):', font=(self.roboto_font, 10, 'bold')).grid(row=6,
-                                                                                                             column=0,
-                                                                                                             padx=10,
-                                                                                                             pady=5,
-                                                                                                             sticky="w")
+                                                                                                                  column=0,
+                                                                                                                  padx=10,
+                                                                                                                  pady=5,
+                                                                                                                  sticky="w")
         self.max_q_value_var = tk.StringVar(value="0.05")
         self.max_q_combobox = ttk.Combobox(
             self.step4_frame,
@@ -956,7 +1058,6 @@ class ATACSeqPipeline:
                  font=(self.roboto_font, 9, 'italic')
                  ).grid(row=6, column=4, columnspan=6, padx=10, pady=5, sticky="w")
 
-
         # With read-only display
         tk.Label(self.step4_frame, text="Genome Size (auto-filled):").grid(row=7, column=0, sticky="w", padx=10, pady=5)
         self.macs3_genome_entry = tk.Entry(self.step4_frame, width=30, state='readonly')
@@ -969,9 +1070,10 @@ class ATACSeqPipeline:
         self.macs3_genome_entry.config(state='readonly')
         tk.Button(self.step4_frame, text="Save and Next", command=self.save_step4b_settings, bg="yellow green").grid(
             row=9, column=0, columnspan=3, pady=10)
-        tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='salmon').grid(row=9,
-                                                                                                        column=0,
-                                                                                                        pady=10)
+        tk.Button(self.step4_frame, text="Back", command=lambda: self.navigate_back_to_step4_ui(), bg='salmon').grid(
+            row=9,
+            column=0,
+            pady=10)
 
     def populate_samples(self):
         sample_input = self.sample_input.get()
@@ -1188,7 +1290,6 @@ class ATACSeqPipeline:
                 selected_samples = glob.glob(os.path.join(raw_data_dir, "*.fastq.gz")) + \
                                    glob.glob(os.path.join(raw_data_dir, "*.fq.gz"))
 
-
             # Step 3: Trimming
             if not self.params["step2"].get("skip_trimming", False):
                 self.update_output_gui("Checking Step 3: Trim Galore...\n")
@@ -1255,7 +1356,6 @@ class ATACSeqPipeline:
                         return
                 else:
                     self.update_output_gui("Skipping Step 5: MultiQC trimmed data (report exists)\n")
-
 
             # ====== Ensembl Reference Download and Index Build ====== #
             ensembl_release = "111"
@@ -1501,7 +1601,6 @@ class ATACSeqPipeline:
                 else:
                     self.update_output_gui(f"Skipping coverage for {sample} (file exists)\n")
 
-
             # Create output directory for coverage profiles (associated helper function after this method)
             coverage_profile_dir = os.path.join(normalized_coverage, "coverage_profiles")
             os.makedirs(coverage_profile_dir, exist_ok=True)
@@ -1572,7 +1671,6 @@ class ATACSeqPipeline:
                         if not self.run_blocking_command(cmd_genrich):
                             return
 
-
             # MACS3
             else:
                 bam_dir = bam_output
@@ -1583,127 +1681,137 @@ class ATACSeqPipeline:
                 max_q = self.params["step4"].get("max_q_value", 0.05)
                 genome_size = self.params["step4"].get("genome", "hs")
 
-                cmd_all = ""
                 files_to_delete = set()
                 control_filtered_map = {}
+                macs3_commands = []
 
-                # Process control samples
+                # Helper to generate BAM processing command
+                def process_bam(sample, files_to_delete):
+                    name_sorted_bam = os.path.join(bam_dir, f"{sample}.name.sorted.bam")
+                    fixed_bam = os.path.join(bam_dir, f"{sample}.fixmate.bam")
+                    coord_bam = os.path.join(bam_dir, f"{sample}.coord.bam")
+                    dedup_bam = os.path.join(bam_dir, f"{sample}.dedup.bam")
+                    filtered_bam = os.path.join(bam_dir, f"{sample}.filtered.dedup.bam")
+
+                    cmd = (
+                        f"samtools fixmate -m {name_sorted_bam} {fixed_bam} && "
+                        f"samtools sort --threads {threads} -o {coord_bam} {fixed_bam} && "
+                        f"samtools markdup -r --threads {threads} {coord_bam} {dedup_bam} && "
+                        f"samtools index -@ {threads} {dedup_bam}"
+                    )
+                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
+                    return cmd, dedup_bam, filtered_bam
+
+                # Process controls
                 for ctrl in control:
-                    name_sorted_bam = os.path.join(bam_dir, f"{ctrl}.name.sorted.bam")
-                    fixed_bam = os.path.join(bam_dir, f"{ctrl}.fixmate.bam")
-                    coord_bam = os.path.join(bam_dir, f"{ctrl}.coord.bam")
-                    dedup_bam = os.path.join(bam_dir, f"{ctrl}.dedup.bam")
-                    filtered_bam = os.path.join(bam_dir, f"{ctrl}.filtered.dedup.bam")
-
                     self.update_output_gui(f"Processing control sample {ctrl}...\n")
-
-                    cmd = (
-                        f"samtools fixmate -m {name_sorted_bam} {fixed_bam} && "
-                        f"samtools sort --threads {threads} -o {coord_bam} {fixed_bam} && "
-                        f"samtools markdup -r --threads {threads} {coord_bam} {dedup_bam} && "
-                        f"samtools index -@ {threads} {dedup_bam}"
-                    )
-                    if not self.run_blocking_command(cmd):
-                        return
-
-                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
-
+                    cmd, dedup, filtered = process_bam(ctrl, files_to_delete)
+                    if not self.run_blocking_command(cmd): return
                     try:
-                        self.filter_bam(dedup_bam, filtered_bam, blacklist_files, exclude_chr)
-                        files_to_delete.add(filtered_bam)
-                        control_filtered_map[ctrl] = filtered_bam
+                        self.filter_bam(dedup, filtered, blacklist_files, exclude_chr)
+                        files_to_delete.add(filtered)
+                        control_filtered_map[ctrl] = filtered
                     except Exception as e:
-                        self.show_error_gui(f"BAM filtering failed for control sample {ctrl}: {str(e)}")
+                        self.show_error_gui(f"BAM filtering failed for control sample {ctrl}: {e}")
                         return
 
-                # Process treated samples
+                # Process treated + construct MACS3 commands
                 for s in treated:
-                    name_sorted_bam = os.path.join(bam_dir, f"{s}.name.sorted.bam")
-                    fixed_bam = os.path.join(bam_dir, f"{s}.fixmate.bam")
-                    coord_bam = os.path.join(bam_dir, f"{s}.coord.bam")
-                    dedup_bam = os.path.join(bam_dir, f"{s}.dedup.bam")
-                    filtered_bam = os.path.join(bam_dir, f"{s}.filtered.dedup.bam")
-
-                    self.update_output_gui(f"Processing treated sample {s}...\n")
-
-                    cmd = (
-                        f"samtools fixmate -m {name_sorted_bam} {fixed_bam} && "
-                        f"samtools sort --threads {threads} -o {coord_bam} {fixed_bam} && "
-                        f"samtools markdup -r --threads {threads} {coord_bam} {dedup_bam} && "
-                        f"samtools index -@ {threads} {dedup_bam}"
-                    )
-                    if not self.run_blocking_command(cmd):
-                        return
-
-                    files_to_delete.update([fixed_bam, coord_bam, dedup_bam])
-
+                    self.update_output_gui(f"Processing test sample {s}...\n")
+                    cmd, dedup, filtered = process_bam(s, files_to_delete)
+                    if not self.run_blocking_command(cmd): return
                     try:
-                        self.filter_bam(dedup_bam, filtered_bam, blacklist_files, exclude_chr)
-                        files_to_delete.add(filtered_bam)
+                        self.filter_bam(dedup, filtered, blacklist_files, exclude_chr)
+                        files_to_delete.add(filtered)
                     except Exception as e:
-                        self.show_error_gui(f"BAM filtering failed for sample {s}: {str(e)}")
+                        self.show_error_gui(f"BAM filtering failed for sample {s}: {e}")
                         return
 
-                    # MACS3 command construction
                     if control:
                         for ctrl in control:
                             control_bam = control_filtered_map[ctrl]
-                            output_prefix = os.path.join(peak_files, f"{s}_{ctrl}.macs3.peak")
-                            cmd = (
-                                f"macs3 callpeak -f BAMPE --call-summits -t {filtered_bam} -c {control_bam} "
-                                f"-g {genome_size} -n {output_prefix} -B -q {max_q}"
+                            prefix = os.path.join(peak_files, f"{s}_{ctrl}.macs3.peak")
+                            macs_cmd = (
+                                f"macs3 callpeak -f BAMPE --call-summits -t {filtered} -c {control_bam} "
+                                f"-g {genome_size} -n {prefix} -B -q {max_q}"
                             )
-                            cmd_all += cmd + " && "
+                            macs3_commands.append((f"{s} vs {ctrl}", macs_cmd))
                     else:
-                        output_prefix = os.path.join(peak_files, f"{s}.macs3.peak")
-                        cmd = (
-                            f"macs3 callpeak -f BAMPE --call-summits -t {filtered_bam} "
-                            f"-g {genome_size} -n {output_prefix} -B -q {max_q}"
+                        prefix = os.path.join(peak_files, f"{s}.macs3.peak")
+                        macs_cmd = (
+                            f"macs3 callpeak -f BAMPE --call-summits -t {filtered} "
+                            f"-g {genome_size} -n {prefix} -B -q {max_q}"
                         )
-                        cmd_all += cmd + " && "
+                        macs3_commands.append((s, macs_cmd))
 
-                # Execute MACS3
-                cmd_all = cmd_all.rstrip(" && ")
+                # Run MACS3
                 self.update_output_gui("Running Step 8: MACS3 Peak Calling...\n")
-                if not self.run_blocking_command(cmd_all):
-                    return
-
-                # Cleanup
-                self.update_output_gui("Cleaning up temporary BAM files...\n")
-                for f in files_to_delete:
-                    try:
-                        os.remove(f)
-                    except Exception as e:
-                        self.update_output_gui(f"Warning: Could not delete file {f}: {str(e)}\n")
-
-            # Step 9: Peak Annotation
-            r_script_path = resource_filename('chromacs',
-                                              'annotate_peaks_5.R')
-            if not os.path.exists(r_script_path):
-                self.show_error_gui(f"R script 'annotate_peaks_5.R' not found at:\n{r_script_path}")
-                return
-
-            genome_version = self.params["step3"]["genome_version"]
-            ref_dir = self.params["step3"]["ref_dir"]
-            cmd_annotation = (
-                f"Rscript {r_script_path} "
-                f"{peak_files} {genome_version} {ref_dir}"
-            )
-
-            self.update_output_gui(f"Running Peak Annotation with {r_script_path}...\n")
-
-            if not self.run_blocking_command(cmd_annotation):
-                return
-
-            self.root.after(0, self.diffbind_btn.config, {"state": tk.NORMAL})
-            timestamp = self.get_timestamp()
-            self.update_output_gui(f"\n✅ Pipeline execution complete! [{timestamp}]\n")
-            # pop-up
-            messagebox.showinfo("Pipeline Finished", "✅ All steps have completed successfully!")
+                self.run_macs3_commands(
+                    macs3_commands,
+                    on_complete=lambda: self.cleanup_and_continue(files_to_delete)
+                )
 
         except Exception as e:
             self.show_error_gui(f"Pipeline failed: {str(e)}")
 
+    def run_macs3_commands(self, commands, on_complete=None):
+        def worker():
+            for label, cmd in commands:
+                self.update_output_gui(f"\n Calling peaks for: {label}\n{cmd}\n")
+                try:
+                    proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                            text=True)
+                    for line in proc.stdout:
+                        self.root.after(0, lambda l=line: self.update_output_gui(l))
+                    exit_code = proc.wait()
+                    if exit_code != 0:
+                        self.root.after(0, lambda: self.show_error_gui(f"MACS3 failed for {label}"))
+                        return
+                except Exception as e:
+                    self.root.after(0, lambda: self.show_error_gui(f"MACS3 crashed for {label}: {e}"))
+                    return
+            self.root.after(0, lambda: self.update_output_gui("✅ MACS3 Peak Calling completed.\n"))
+            if on_complete:
+                self.root.after(0, on_complete)
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def cleanup_and_continue(self, files_to_delete):
+        self.update_output_gui("Cleaning up temporary BAM files...\n")
+        for f in files_to_delete:
+            try:
+                os.remove(f)
+            except Exception as e:
+                self.update_output_gui(f"Warning: Could not delete file {f}: {e}\n")
+        self.run_peak_annotation()
+
+    def run_peak_annotation(self):
+        r_script_path = resource_filename('chromacs', 'annotate_peaks_5.R')
+        if not os.path.exists(r_script_path):
+            self.show_error_gui(f"R script 'annotate_peaks_5.R' not found at:\n{r_script_path}")
+            return
+
+        genome_version = self.params["step3"]["genome_version"]
+        ref_dir = self.params["step3"]["ref_dir"]
+        peak_files = os.path.join(self.params["step1"]["base_output_dir"], "peak_files")
+        cmd = f"Rscript {r_script_path} {peak_files} {genome_version} {ref_dir}"
+        self.update_output_gui(f"Running Peak Annotation with {r_script_path}...\n")
+
+        def worker():
+            try:
+                proc = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        text=True)
+                for line in proc.stdout:
+                    self.root.after(0, lambda l=line: self.update_output_gui(l))
+                proc.wait()
+                self.root.after(0, lambda: self.diffbind_btn.config(state=tk.NORMAL))
+                timestamp = self.get_timestamp()
+                self.update_output_gui(f"\n✅ Pipeline execution complete! [{timestamp}]\n")
+                messagebox.showinfo("Pipeline Finished", "✅ All steps have completed successfully!")
+            except Exception as e:
+                self.root.after(0, lambda: self.show_error_gui(f"Peak annotation failed: {e}"))
+
+        threading.Thread(target=worker, daemon=True).start()
 
     # this is required for MACS3 filtering
     def filter_bam(self, input_bam, output_bam, blacklist_files, exclude_chr):
@@ -1790,7 +1898,6 @@ class ATACSeqPipeline:
             "WBcel235": {"MtDNA", "chrM"},
         }
 
-
         # Keyword-based blacklist (safe for most organisms)
         non_primary_keywords = {"random", "alt", "hap", "fix", "patch", "scaffold", "gl", "un", "ki"}
 
@@ -1856,7 +1963,6 @@ class ATACSeqPipeline:
 
                 outfile.write(f"{chrom}\t{bed_start}\t{bed_end}\t{gene_id}\t.\t{strand}\n")
 
-
     def run_tss_matrix_and_heatmap(self, tss_bed: str, bw_dir: str, out_prefix: str):
 
         bw_files = glob.glob(os.path.join(bw_dir, "*.normalized.bw"))
@@ -1895,7 +2001,6 @@ class ATACSeqPipeline:
 
         return matrix_file, heatmap_file
 
-
     # =================== DiffBind Analysis Logic =================== #
 
     def launch_diffbind_config(self):
@@ -1909,7 +2014,8 @@ class ATACSeqPipeline:
         # Peak file selection
         tk.Label(self.diffbind_window, text="1. Select Peak Files:",
                  font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, padx=10, pady=5)
-        self.peak_listbox = tk.Listbox(self.diffbind_window, selectmode=tk.MULTIPLE, exportselection= False, height=10, width=80)
+        self.peak_listbox = tk.Listbox(self.diffbind_window, selectmode=tk.MULTIPLE, exportselection=False, height=10,
+                                       width=80)
         self.peak_listbox.grid(row=0, column=1, padx=10, pady=5)
         tk.Button(self.diffbind_window, text="Browse Peaks",
                   command=self.populate_peak_list, bg='gray').grid(row=0, column=2)
@@ -1917,6 +2023,19 @@ class ATACSeqPipeline:
         # Configuration grid
         self.config_frame = tk.Frame(self.diffbind_window)
         self.config_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10, sticky='nw')
+
+        # Instruction label (centered)
+        instruction_1 = (
+            "Note: You can skip this Control section, if there is none\n"
+            "Please keep in mind that these are not biological controls, rather technical controls\n"
+            "Do NOT put untreated condition as control here\n"
+        )
+
+        tk.Label(
+            self.diffbind_window, text=instruction_1,
+            wraplength=650, justify=tk.LEFT, anchor="w",
+            font=(self.roboto_font, 9)
+        ).grid(row=1, column=2, padx=10, sticky="w")
 
         # FDR Threshold Input
         tk.Label(self.diffbind_window, text="FDR Threshold (0–1):", font=(self.roboto_font, 10)).grid(row=2, column=0,
@@ -1967,14 +2086,14 @@ class ATACSeqPipeline:
         self.peak_listbox.delete(0, tk.END)
         peak_dir = os.path.join(self.params["step1"]["base_output_dir"], "peak_files")
         peak_files = glob.glob(os.path.join(peak_dir, "*.narrowPeak")) \
-                   + glob.glob(os.path.join(peak_dir, "*.genrich.peak"))
+                     + glob.glob(os.path.join(peak_dir, "*.genrich.peak"))
         for pf in sorted(peak_files):
             name = os.path.basename(pf)
             self.peak_listbox.insert(tk.END, name)
             # Default vars
             self.conditions[name] = tk.StringVar(value="treated")
             self.replicates[name] = tk.IntVar(value=1)
-            self.controls[name]   = tk.StringVar(value="")
+            self.controls[name] = tk.StringVar(value="")
 
     def build_param_rows(self):
         # Clear existing rows
@@ -2016,15 +2135,31 @@ class ATACSeqPipeline:
         if not self.peak_listbox.curselection():
             return self.show_error_gui("Please select at least one peak file.")
 
-        # Validate each row’s required fields
+        has_any_control = False
+        missing_controls = []
+
+        # Validate required fields
         for idx in self.peak_listbox.curselection():
             peak = self.peak_listbox.get(idx)
             if not self.conditions[peak].get():
                 return self.show_error_gui(f"Condition missing for {peak}")
             if not self.replicates[peak].get():
                 return self.show_error_gui(f"Replicate missing for {peak}")
-            if not self.controls[peak].get():
-                return self.show_error_gui(f"Control missing for {peak}")
+            if self.controls[peak].get():
+                has_any_control = True
+            else:
+                missing_controls.append(peak)
+
+        # Warn the user if some peaks have control and others do not
+        if has_any_control and missing_controls:
+            peak_list = "\n".join(missing_controls)
+            proceed = messagebox.askyesno(
+                "Mixed Control Usage",
+                f"Some peak files are missing control inputs:\n\n{peak_list}\n\n"
+                "Do you want to continue without controls for those?"
+            )
+            if not proceed:
+                return
 
         fdr = self.fdr_threshold.get()
         if not (0.0 <= fdr <= 1.0):
@@ -2035,46 +2170,56 @@ class ATACSeqPipeline:
     def generate_metadata(self):
         rows = []
         base = self.params["step1"]["base_output_dir"]
+        has_control = False  # Flag to check if any control is used
+
         for idx in self.peak_listbox.curselection():
             peak_filename = self.peak_listbox.get(idx)
-            # Extract SampleID from peak filename
             sample_id_with_suffix = os.path.basename(peak_filename).split('.')[0]
 
-            # Handle MACS3 filenames have _SRR[control]... suffix
             if 'macs3' in peak_filename.lower():
-                # For MACS3, take only the first part before underscore
                 sample_id = sample_id_with_suffix.split('_')[0]
                 peak_caller = 'narrow'
-            else:  # Genrich
+            else:
                 sample_id = sample_id_with_suffix
                 peak_caller = 'bed'
 
-            # Get user-assigned parameters
             condition = self.conditions[peak_filename].get()
             replicate = self.replicates[peak_filename].get()
             control_id = self.controls[peak_filename].get()
+            if control_id: has_control = True
 
-            # Build file paths
             bam_reads = os.path.join(base, "bam_output", f"{sample_id}.sort.bam")
             peak_path = os.path.join(base, "peak_files", peak_filename)
-            bam_control = os.path.join(base, "bam_output", f"{control_id}.sort.bam") if control_id else ''
+            bam_control = os.path.join(base, "bam_output", f"{control_id}.sort.bam") if control_id else ""
 
-            rows.append({
+            row = {
                 "SampleID": sample_id,
                 "bamReads": bam_reads,
                 "Condition": condition,
                 "Replicate": replicate,
                 "Peaks": peak_path,
-                "PeakCaller": peak_caller,
-                "ControlID": control_id,
-                "bamControl": bam_control
-            })
+                "PeakCaller": peak_caller
+            }
 
-        return pd.DataFrame(rows)
+            if control_id:
+                row["ControlID"] = control_id
+                row["bamControl"] = bam_control
+
+            rows.append(row)
+
+        df = pd.DataFrame(rows)
+
+        # Reorder columns if controls are included
+        if has_control:
+            cols = ["SampleID", "bamReads", "Condition", "Replicate",
+                    "Peaks", "PeakCaller", "ControlID", "bamControl"]
+        else:
+            cols = ["SampleID", "bamReads", "Condition", "Replicate",
+                    "Peaks", "PeakCaller"]
+
+        return df[cols]
 
     def run_diffbind_analysis(self):
-
-
         # 1. Prepare output directory
         base_dir = self.params["step1"]["base_output_dir"]
         out_dir = os.path.join(base_dir, "diffbind_results")
@@ -2177,7 +2322,6 @@ class ATACSeqPipeline:
                 self.root.after(0, lambda: self.show_error_gui(str(e)))
 
         threading.Thread(target=worker, daemon=True).start()
-
 
     # =================== NoiSeq Analysis Logic =================== #
 
@@ -2414,7 +2558,6 @@ class ATACSeqPipeline:
 
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
-
     def run_blocking_command(self, command):
         process = subprocess.Popen(
             command,
@@ -2458,6 +2601,6 @@ def main():
     app = ATACSeqPipeline(root)
     root.mainloop()
 
+
 if __name__ == "__main__":
     main()
-
