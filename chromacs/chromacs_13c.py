@@ -1660,6 +1660,8 @@ class ATACSeqPipeline:
                     self.update_output_gui("Running Step 8: Genrich Peak Calling...\n")
                     if not self.run_blocking_command(cmd_genrich):
                         return
+                    self.run_peak_annotation()
+
                 else:
                     for sample in treated:
                         output_peak = f"{peak_files}/{sample}.genrich.peak"
@@ -1670,6 +1672,7 @@ class ATACSeqPipeline:
                         self.update_output_gui(f"Running Genrich for {sample}...\n")
                         if not self.run_blocking_command(cmd_genrich):
                             return
+                    self.run_peak_annotation()
 
             # MACS3
             else:
