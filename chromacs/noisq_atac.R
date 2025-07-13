@@ -67,17 +67,17 @@ myresults <- noiseq(
   replicates = "no"
 )
 
-# Try to get DE genes with q >= 0.9
+# Try to get DE genes with q 
 res_all <- myresults@results[[1]]
 de_res <- tryCatch({
-  degenes(myresults, q = 0.9, M = NULL)
+  degenes(myresults, q = q_threshold, M = NULL)
 }, error = function(e) {
   warning("⚠️ degenes() failed; using all features instead.")
   res_all
 })
 
 if (nrow(de_res) == 0) {
-  warning("⚠️ No DE features detected (q >= 0.9); using all results.")
+  warning("⚠️ No DE features detected; using all results.")
   de_res <- res_all
 }
 
@@ -96,6 +96,21 @@ out_df <- data.frame(
   res_all[filtered_rows, , drop = FALSE]
 )
 
+# ========= Split into gain and loss sites =========
+if ("M" %in% colnames(out_df)) {
+  gain_sites <- subset(out_df, M > 0)
+  loss_sites <- subset(out_df, M < 0)
+  
+  # Save as TSV
+  fwrite(gain_sites, file = file.path(dirname(output_file), "NOISeq_gain_sites.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
+  fwrite(loss_sites, file = file.path(dirname(output_file), "NOISeq_loss_sites.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
+  message("Gain and loss site tables saved.")
+} else {
+  warning("⚠️ Cannot split into gain/loss: 'M' column missing in final output.")
+}
+
+
+
 # ============  Generate Plots ==============
 message("Generating NOISeq diagnostic + volcano + PCA plots...")
 plot_file <- file.path(dirname(output_file), "NOISeq_plots.pdf")
@@ -107,12 +122,12 @@ DE.plot(myresults, q = q_threshold, graphic = "expr", log.scale = TRUE)
 DE.plot(myresults, q = q_threshold, graphic = "MD")
 
 # --- Volcano plot (safeguarded) ---
-if (!all(c("M", "probability") %in% colnames(res_all))) {
+if (!all(c("M", "prob") %in% colnames(res_all))) {
   warning("⚠️ Missing 'M' or 'probability' in NOISeq results. Skipping volcano plot.")
 } else {
   volcano_df <- data.frame(
     M = res_all$M,
-    prob = res_all$probability,
+    prob = res_all$prob,
     peak_id = rownames(res_all)
   )
   volcano_df$pval <- 1 - volcano_df$prob
