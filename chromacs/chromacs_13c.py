@@ -487,13 +487,6 @@ class ATACSeqPipeline:
                 "ensembl_cap": "Xenopus_tropicalis",
                 "ensembl_assembly": "UCB_Xtro_10.0"
             },
-            "Indian Cobra (Nana_v5)": {
-                "bowtie_ref": "Nana_v5",
-                "macs_size": "1.8e9",
-                "ensembl_species": "naja_naja",
-                "ensembl_cap": "Naja_naja",
-                "ensembl_assembly": "Nana_v5"
-            },
             "Atlantic Salmon (Ssal_v3.1)": {
                 "bowtie_ref": "Ssal_v3.1",
                 "macs_size": "3.0e9",

@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# ===============================
+# R Script: annotate_diffbind.R
+# ===============================
+
+#==============================================================================#
 suppressPackageStartupMessages({
   library(ChIPseeker)
   library(clusterProfiler)
@@ -12,6 +17,7 @@ suppressPackageStartupMessages({
   if (!requireNamespace("BiocManager", quietly=TRUE))
     install.packages("BiocManager")
 })
+#==============================================================================#
 
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 3) {
@@ -207,7 +213,7 @@ annotate_gr <- function(gr, name) {
   message("[✓] Annotated & plotted: ", name)
 }
 
-# 1) Annotate diffbind_results.csv (handles both "Chr"/"Start"/"End" and "seqnames"/"start"/"end") # seqnames/start/end is our preferred one
+# 1) Annotate diffbind_results.csv 
 csv_file <- file.path(diffbind_dir, "diffbind_results.csv")
 if (file.exists(csv_file)) {
   df <- read.csv(csv_file, stringsAsFactors=FALSE)

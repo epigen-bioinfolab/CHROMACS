@@ -1,6 +1,12 @@
 #!/usr/bin/env Rscript
+# ===============================
+# R Script: diffbind_3.R
+# ===============================
+
+#!/usr/bin/env Rscript
 args <- commandArgs(trailingOnly=TRUE)
 
+# =============================================================================#
 # Install missing Bioconductor packages
 if (!requireNamespace("BiocManager", quietly=TRUE)) {
   install.packages("BiocManager", repos="https://cran.rstudio.com")
@@ -22,6 +28,7 @@ suppressPackageStartupMessages({
 })
 
 #==============================================================================#
+
 # Input validation
 if(length(args) < 2) {
   stop("Usage: Rscript diffbind_3.R <out_csv> <out_dir> [fdr_threshold]")
@@ -65,8 +72,6 @@ tryCatch({
                          greylist  = FALSE)
   
   dbObj <- dba.count(dbObj)
-  
-  # do we add a normalization step here? (DiffBind performs its default normalization (TMM))
   
   # Auto-create exactly one contrast, allowing groups down to min_reps
   dbObj <- dba.contrast(dbObj,
