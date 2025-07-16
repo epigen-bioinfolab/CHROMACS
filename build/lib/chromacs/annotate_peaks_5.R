@@ -1,3 +1,8 @@
+#!/usr/bin/env Rscript
+# ===============================
+# R Script: annotate_peaks_5.R
+# ===============================
+
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 3) {
   stop("Usage: Rscript annotate_peaks_5.R <peak_dir> <assembly> <ref_dir>")
@@ -40,6 +45,7 @@ suppressPackageStartupMessages({
   library(txdbmaker)
   library(AnnotationForge)
 })
+#==============================================================================#
 
 # genome_mapping
 genome_mapping <- list(
@@ -52,7 +58,6 @@ genome_mapping <- list(
   Pan_tro_3.0 = list(sp="pan_troglodytes", cap="Pan_troglodytes", org_db="org.Pt.eg.db", tax_id=9598),
   ROS_Cfam_1.0 = list(sp="canis_lupus_familiaris", cap="Canis_lupus_familiaris", org_db="org.Cf.eg.db", tax_id=9615),
   ARS1 = list(sp="capra_hircus", cap="Capra_hircus", org_db="org.Che.eg.db", tax_id=9925), # no such org_db found
-  CVASU_BBG_1.0 = list(sp="capra_hircus", cap="Capra_hircus", org_db="org.Che.eg.db", tax_id=9925), # no such org_db found
   OryCun2.0 = list(sp="oryctolagus_cuniculus", cap="Oryctolagus_cuniculus", org_db="org.Ocu.eg.db", tax_id=9986), # no such org_db found
   gorGor4 = list(sp="gorilla_gorilla", cap="Gorilla_gorilla", org_db="org.Gor.eg.db", tax_id=9593), # no such org_db found
   Mmul_10 = list(sp="macaca_mulatta", cap="Macaca_mulatta", org_db="org.Mmu.eg.db", tax_id=9544),

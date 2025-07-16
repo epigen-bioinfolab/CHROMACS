@@ -3,6 +3,7 @@
 # R Script: annotate_noisq.R
 # ===============================
 
+#==============================================================================#
 suppressPackageStartupMessages({
   library(ChIPseeker)
   library(GenomicRanges)
@@ -14,6 +15,7 @@ suppressPackageStartupMessages({
   library(clusterProfiler)
   library(grid)
 })
+#==============================================================================#
 
 args <- commandArgs(trailingOnly=TRUE)
 if (length(args) < 4) {

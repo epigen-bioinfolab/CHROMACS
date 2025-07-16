@@ -1,10 +1,16 @@
 #!/usr/bin/env Rscript
+# ===============================
+# R Script: noisq_atac.R
+# ===============================
 
+#==============================================================================#
 library(NOISeq)
 library(openxlsx)
 library(data.table)
 library(ggplot2)
 library(ggrepel)
+#==============================================================================#
+
 
 args <- commandArgs(TRUE)
 
@@ -18,7 +24,7 @@ output_file   <- args[3]
 q_threshold   <- as.numeric(args[4])
 
 if (is.na(q_threshold) || q_threshold < 0 || q_threshold > 1) {
-  stop("❌ Invalid q-value threshold. Must be between 0 and 1.")
+  stop("Invalid q-value threshold. Must be between 0 and 1.")
 }
 
 # ===================== Load Data =====================
@@ -28,7 +34,7 @@ pid <- counts_dt$peak_id
 sample_ids <- metadata$SampleID
 conditions <- metadata$Condition
 if (!all(sample_ids %in% colnames(counts_dt))) {
-  stop("❌ SampleIDs in metadata do not match count matrix.")
+  stop("SampleIDs in metadata do not match count matrix.")
 }
 counts_dt <- counts_dt[, sample_ids, with = FALSE]
 

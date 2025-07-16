@@ -217,7 +217,7 @@ class ATACSeqPipeline:
             row=6, column=0, sticky="w", padx=10, pady=5)
         self.threads_entry = tk.Entry(self.step1_frame, width=10)
         self.threads_entry.grid(row=6, column=1, padx=10, pady=5)
-        self.threads_entry.insert(0, "8")  # Default value
+        self.threads_entry.insert(0, "8")  # Default value = 8
 
         # Save button
         tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="yellow green").grid(
@@ -486,13 +486,6 @@ class ATACSeqPipeline:
                 "ensembl_species": "xenopus_tropicalis",
                 "ensembl_cap": "Xenopus_tropicalis",
                 "ensembl_assembly": "UCB_Xtro_10.0"
-            },
-            "Indian Cobra (Nana_v5)": {
-                "bowtie_ref": "Nana_v5",
-                "macs_size": "1.8e9",
-                "ensembl_species": "naja_naja",
-                "ensembl_cap": "Naja_naja",
-                "ensembl_assembly": "Nana_v5"
             },
             "Atlantic Salmon (Ssal_v3.1)": {
                 "bowtie_ref": "Ssal_v3.1",
@@ -883,7 +876,7 @@ class ATACSeqPipeline:
             # Hide merged output widgets
             self.merged_output_label.grid_remove()
             self.merged_output_entry.grid_remove()
-            # Move the Save button up to row 9
+            # Move the Save button
             self.save_button.grid(row=12, column=0, columnspan=3, pady=10)
 
     def add_treated_sample(self):
@@ -2395,7 +2388,7 @@ class ATACSeqPipeline:
         self.noisq_window.geometry("1000x600")
 
         # Peak file selection
-        tk.Label(self.noisq_window, text="Select Peak Files (1 per sample):",
+        tk.Label(self.noisq_window, text="Select Peak Files (1 sample per condition):",
                  font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, padx=10, pady=5)
 
         self.noisq_peak_listbox = tk.Listbox(self.noisq_window, selectmode=tk.MULTIPLE, exportselection=False,

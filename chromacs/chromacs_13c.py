@@ -1618,7 +1618,7 @@ class ATACSeqPipeline:
                 coverage_bw = os.path.join(normalized_coverage, f"{sample}.normalized.bw")
                 if not os.path.exists(coverage_bw):
                     self.update_output_gui(f"Generating coverage for {sample}...\n")
-                    cmd = f"bamCoverage -p {threads} -of bigwig --normalizeUsing=RPKM -v -b {bam_output}/{sample}.sort.bam -o {coverage_bw}"
+                    cmd = f"bamCoverage -p {threads} -of bigwig --normalizeUsing=RPKM -b {bam_output}/{sample}.sort.bam -o {coverage_bw}"
                     if not self.run_blocking_command(cmd):
                         return
                 else:
