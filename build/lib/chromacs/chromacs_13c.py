@@ -217,7 +217,7 @@ class ATACSeqPipeline:
             row=6, column=0, sticky="w", padx=10, pady=5)
         self.threads_entry = tk.Entry(self.step1_frame, width=10)
         self.threads_entry.grid(row=6, column=1, padx=10, pady=5)
-        self.threads_entry.insert(0, "8")  # Default value = 8
+        self.threads_entry.insert(0, "8")  # Default value
 
         # Save button
         tk.Button(self.step1_frame, text="Save & Next", command=self.save_step1_next, bg="yellow green").grid(
@@ -486,6 +486,13 @@ class ATACSeqPipeline:
                 "ensembl_species": "xenopus_tropicalis",
                 "ensembl_cap": "Xenopus_tropicalis",
                 "ensembl_assembly": "UCB_Xtro_10.0"
+            },
+            "Indian Cobra (Nana_v5)": {
+                "bowtie_ref": "Nana_v5",
+                "macs_size": "1.8e9",
+                "ensembl_species": "naja_naja",
+                "ensembl_cap": "Naja_naja",
+                "ensembl_assembly": "Nana_v5"
             },
             "Atlantic Salmon (Ssal_v3.1)": {
                 "bowtie_ref": "Ssal_v3.1",
@@ -876,7 +883,7 @@ class ATACSeqPipeline:
             # Hide merged output widgets
             self.merged_output_label.grid_remove()
             self.merged_output_entry.grid_remove()
-            # Move the Save button
+            # Move the Save button up to row 9
             self.save_button.grid(row=12, column=0, columnspan=3, pady=10)
 
     def add_treated_sample(self):
@@ -1286,15 +1293,13 @@ class ATACSeqPipeline:
             # Step 3: Trimming
             if not self.params["step2"].get("skip_trimming", False):
                 self.update_output_gui("Checking Step 3: Trim Galore...\n")
-
-                # Prepare all Trim Galore commands first
-                trim_commands = []
                 for sample in samples:
                     output_r1 = os.path.join(trimmed_data, f"{sample}_val_1.fq.gz")
                     output_r2 = os.path.join(trimmed_data, f"{sample}_val_2.fq.gz")
 
                     if not (os.path.exists(output_r1) and os.path.exists(output_r2)):
                         sample_files = [f for f in selected_samples if sample in os.path.basename(f)]
+
                         r1_list = [f for f in sample_files if
                                    re.search(r"_R?1(?:_001)?\.f(ast)?q\.gz$", os.path.basename(f))]
                         r2_list = [f for f in sample_files if
@@ -1307,44 +1312,16 @@ class ATACSeqPipeline:
                         r1 = r1_list[0]
                         r2 = r2_list[0]
 
-                        cmd = (f"trim_galore --basename {sample} --gzip --cores {threads} --paired "
+                        self.update_output_gui(f"Running Trim Galore for {sample}...\n")
+                        cmd = (f"trim_galore --basename {sample} --gzip  --cores {threads} --paired "
                                f"{r1} {r2} --output_dir {trimmed_data}")
-                        trim_commands.append((sample, cmd))
-
-                if trim_commands:
-                    self.update_output_gui(f"Running Trim Galore for {len(trim_commands)} samples...\n")
-                    self.run_trim_commands(trim_commands, on_complete=self.continue_after_trimming)
-
-                else:
-                    self.update_output_gui("Skipping Trim Galore (all trimmed files exist)\n")
-                    threading.Thread(target=self.continue_after_trimming, daemon=True).start()
-
+                        if not self.run_blocking_command(cmd):
+                            return
+                    else:
+                        self.update_output_gui(f"Skipping Trim Galore for {sample} (trimmed files exist)\n")
             else:
                 self.update_output_gui("Skipping Step 3: Trim Galore (User chose to use raw data)\n")
-                threading.Thread(target=self.continue_after_trimming, daemon=True).start()
 
-
-        except Exception as e:
-            self.show_error_gui(f"Pipeline failed: {str(e)}")
-
-    def continue_after_trimming(self):
-        # Get parameters needed for commands
-        base_out = self.params["step1"]["base_output_dir"]
-        raw_data = self.params["step1"]["raw_data_dir"]
-        samples = self.params["step2"].get("sample_names", [])
-
-        # Define directories
-        fastqc_raw = os.path.join(base_out, "fastqc_raw")
-        multiqc_raw = os.path.join(base_out, "multiqc_raw")
-        trimmed_data = os.path.join(base_out, "trimmed_data")
-        bam_output = os.path.join(base_out, "bam_output")
-        fastqc_trimmed = os.path.join(base_out, "fastqc_trimmed")
-        multiqc_trimmed = os.path.join(base_out, "multiqc_trimmed")
-        normalized_coverage = os.path.join(base_out, "normalized_coverage")
-        peak_files = os.path.join(base_out, "peak_files")
-        threads = self.params.get("threads", 8)
-
-        try:
             # Step 4: FastQC on trimmed data
             if not self.params["step2"].get("skip_trimming", False):
                 self.update_output_gui("Checking Step 4: FastQC trimmed data...\n")
@@ -1618,7 +1595,7 @@ class ATACSeqPipeline:
                 coverage_bw = os.path.join(normalized_coverage, f"{sample}.normalized.bw")
                 if not os.path.exists(coverage_bw):
                     self.update_output_gui(f"Generating coverage for {sample}...\n")
-                    cmd = f"bamCoverage -p {threads} -of bigwig --normalizeUsing=RPKM -v -b {bam_output}/{sample}.sort.bam -o {coverage_bw}"
+                    cmd = f"bamCoverage -p {threads} -of bigwig --normalizeUsing=RPKM -b {bam_output}/{sample}.sort.bam -o {coverage_bw}"
                     if not self.run_blocking_command(cmd):
                         return
                 else:
@@ -1779,37 +1756,6 @@ class ATACSeqPipeline:
 
         except Exception as e:
             self.show_error_gui(f"Pipeline failed: {str(e)}")
-
-    def run_trim_commands(self, commands, on_complete=None):
-        def worker():
-            for sample, cmd in commands:
-                self.root.after(0, lambda: self.update_output_gui(f"\nTrimming {sample}...\n{cmd}\n"))
-
-                try:
-                    proc = subprocess.Popen(
-                        cmd,
-                        shell=True,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        text=True,
-                        bufsize=1
-                    )
-                    for line in proc.stdout:
-                        self.root.after(0, lambda l=line: self.update_output_gui(l))
-                    exit_code = proc.wait()
-                    if exit_code != 0:
-                        self.root.after(0, lambda: self.show_error_gui(f"Trim Galore failed for {sample}"))
-                        return
-                except Exception as e:
-                    self.root.after(0, lambda: self.show_error_gui(f"Trim Galore crashed for {sample}: {e}"))
-                    return
-
-            self.root.after(0, lambda: self.update_output_gui("✅ Trim Galore completed successfully!\n"))
-
-            if on_complete:
-                self.root.after(0, lambda: threading.Thread(target=on_complete, daemon=True).start())
-
-        threading.Thread(target=worker, daemon=True).start()
 
     def run_macs3_commands(self, commands, on_complete=None):
         def worker():
@@ -2388,7 +2334,7 @@ class ATACSeqPipeline:
         self.noisq_window.geometry("1000x600")
 
         # Peak file selection
-        tk.Label(self.noisq_window, text="Select Peak Files (1 sample per condition):",
+        tk.Label(self.noisq_window, text="Select Peak Files (1 per sample):",
                  font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, padx=10, pady=5)
 
         self.noisq_peak_listbox = tk.Listbox(self.noisq_window, selectmode=tk.MULTIPLE, exportselection=False,
@@ -2614,6 +2560,7 @@ class ATACSeqPipeline:
         threading.Thread(target=worker, daemon=True).start()
 
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
+
     def run_blocking_command(self, command):
         process = subprocess.Popen(
             command,
@@ -2650,6 +2597,7 @@ class ATACSeqPipeline:
 
     def show_info_gui(self, message):
         self.root.after(0, lambda: messagebox.showinfo("Info", message))
+
 
 def main():
     root = tk.Tk()
