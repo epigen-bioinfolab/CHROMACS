@@ -2031,7 +2031,13 @@ class ATACSeqPipeline:
         instruction_1 = (
             "Note: You can skip this Control section, if there is none\n"
             "Please keep in mind that these are not biological controls, rather technical controls\n"
-            "Do NOT put untreated condition as control here\n"
+            "Do NOT put untreated condition as control here\n\n"
+            "IMPORTANT:\n"
+            "Think of “Untreated” as your reference or baseline condition, and “Treated” as the condition you’re comparing against.\n"
+            "These labels can represent any two biological states — e.g.:\n"
+            "Untreated = Lung tissue, Treated = Kidney tissue\n"
+            "Untreated = Wild-type, Treated = Mutant\n"
+            "Untreated = Day 0, Treated = Day 5\n"
         )
 
         tk.Label(
@@ -2049,9 +2055,9 @@ class ATACSeqPipeline:
                    width=5).grid(row=2, column=1, sticky='w')
 
         # Thread count input
-        tk.Label(self.diffbind_window, text="Number of Threads (default = 8):", font=(self.roboto_font, 10)).grid(
+        tk.Label(self.diffbind_window, text="Number of Threads (default = 4):", font=(self.roboto_font, 10)).grid(
             row=4, column=0, sticky='w', padx=10)
-        self.diffbind_threads = tk.StringVar(value="8")  # default is 8
+        self.diffbind_threads = tk.StringVar(value="4")  # default is 4
         tk.Entry(self.diffbind_window, textvariable=self.diffbind_threads, width=5).grid(
             row=4, column=1, sticky='w')
 
@@ -2237,7 +2243,7 @@ class ATACSeqPipeline:
         r_script_path = resource_filename('chromacs', 'diffbind_3.R')
         fdr = str(self.fdr_threshold.get())
         threads = self.diffbind_threads.get().strip()
-        threads = threads if threads.isdigit() and int(threads) > 0 else "8"  # Fallback to 8 if invalid
+        threads = threads if threads.isdigit() and int(threads) > 0 else "4"  # Fallback to 4 if invalid
 
         cmd = ["Rscript", r_script_path, out_csv, out_dir, fdr, threads]
 
@@ -2350,6 +2356,22 @@ class ATACSeqPipeline:
         self.noisq_conditions = {}
 
         self.noisq_peak_listbox.bind('<<ListboxSelect>>', lambda e: self.build_noisq_param_rows())
+
+        # Instruction label (centered)
+        instruction_1 = (
+            "IMPORTANT:\n"
+            "Think of “Untreated” as your reference or baseline condition, and “Treated” as the condition you’re comparing against.\n"
+            "These labels can represent any two biological states — e.g.:\n"
+            "Untreated = Lung tissue, Treated = Kidney tissue\n"
+            "Untreated = Wild-type, Treated = Mutant\n"
+            "Untreated = Day 0, Treated = Day 5\n"
+        )
+
+        tk.Label(
+            self.diffbind_window, text=instruction_1,
+            wraplength=650, justify=tk.LEFT, anchor="w",
+            font=(self.roboto_font, 9)
+        ).grid(row=1, column=2, padx=10, sticky="w")
 
         # NOISeq q-value threshold
         tk.Label(self.noisq_window, text="Confidence Threshold (NOISeq q, 0–1):",

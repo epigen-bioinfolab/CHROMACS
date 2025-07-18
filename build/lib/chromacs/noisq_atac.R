@@ -45,6 +45,8 @@ rownames(counts) <- pid
 # ===================== Factors =====================
 factors <- data.frame(condition = conditions)
 rownames(factors) <- sample_ids
+# Explicitly set untreated as reference (baseline)
+factors$condition <- factor(factors$condition, levels = c("treated", "untreated"))
 
 # ===================== NOISeq Object & Normalize =====================
 mydata <- readData(data = counts, factors = factors)

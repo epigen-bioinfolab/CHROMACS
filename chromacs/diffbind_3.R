@@ -36,9 +36,9 @@ if(length(args) < 2) {
 metadata_path <- args[1]
 output_dir <- args[2]
 fdr_thresh <- ifelse(length(args) >= 3, as.numeric(args[3]), 0.05)
-threads <- ifelse(length(args) >= 4, as.integer(args[4]), 8)
+threads <- ifelse(length(args) >= 4, as.integer(args[4]), 4)
 if (is.na(threads) || threads <= 0) {
-  threads <- 8
+  threads <- 4
 }
 options(mc.cores=threads)
 message("Using ", threads, " threads for parallel processing.")
@@ -76,7 +76,8 @@ tryCatch({
   # Auto-create exactly one contrast, allowing groups down to min_reps
   dbObj <- dba.contrast(dbObj,
                         categories = DBA_CONDITION,
-                        minMembers = min_reps)
+                        minMembers = min_reps,
+                        reorderMeta = list(Condition="untreated")) # ensures untreated as baseline
   
   dbObj <- dba.analyze(dbObj, bBlacklist = FALSE, bGreylist = FALSE)
   
