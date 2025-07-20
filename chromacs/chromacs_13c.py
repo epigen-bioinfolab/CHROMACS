@@ -2352,7 +2352,7 @@ class ATACSeqPipeline:
 
         # Metadata assignment
         self.noisq_meta_frame = tk.Frame(self.noisq_window)
-        self.noisq_meta_frame.grid(row=1, column=0, columnspan=3, padx=10, pady=10)
+        self.noisq_meta_frame.grid(row=1, column=0, columnspan=2, padx=(10, 40), pady=10, sticky="nw")
 
         self.noisq_conditions = {}
 
@@ -2369,10 +2369,10 @@ class ATACSeqPipeline:
         )
 
         tk.Label(
-            self.diffbind_window, text=instruction_1,
-            wraplength=650, justify=tk.LEFT, anchor="w",
+            self.noisq_window, text=instruction_1,
+            wraplength=350, justify=tk.LEFT, anchor="n",  # anchor to top for alignment
             font=(self.roboto_font, 9)
-        ).grid(row=1, column=2, padx=10, sticky="w")
+        ).grid(row=1, column=2, padx=(0, 10), sticky="nw")
 
         # NOISeq q-value threshold
         tk.Label(self.noisq_window, text="Confidence Threshold (NOISeq q, 0–1):",
