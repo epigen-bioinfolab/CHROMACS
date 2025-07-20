@@ -77,7 +77,7 @@ tryCatch({
   dbObj <- dba.contrast(dbObj,
                         categories = DBA_CONDITION,
                         minMembers = min_reps,
-                        reorderMeta = list(Condition="treated"))
+                        reorderMeta = list(Condition="untreated")) # ensures untreated as baseline
   
   dbObj <- dba.analyze(dbObj, bBlacklist = FALSE, bGreylist = FALSE)
   

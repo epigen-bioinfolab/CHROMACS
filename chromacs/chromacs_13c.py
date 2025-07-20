@@ -1315,7 +1315,8 @@ class ATACSeqPipeline:
                         self.update_output_gui(f"Running Trim Galore for {sample}...\n")
                         cmd = (f"trim_galore --basename {sample} --gzip  --cores {threads} --paired "
                                f"{r1} {r2} --output_dir {trimmed_data}")
-                        if not self.run_blocking_command(cmd):
+                        # Suppress output to GUI for Trim Galore
+                        if not self.run_blocking_command(cmd, show_output=False):
                             return
                     else:
                         self.update_output_gui(f"Skipping Trim Galore for {sample} (trimmed files exist)\n")
@@ -2583,26 +2584,35 @@ class ATACSeqPipeline:
 
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
-    def run_blocking_command(self, command):
+    def run_blocking_command(self, command, show_output=True):
         process = subprocess.Popen(
             command,
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            text=True
+            text=True,
+            bufsize=1
         )
 
-        # Read output in real-time and update GUI
+        output_lines = []
+
         while True:
             output = process.stdout.readline()
             if output == '' and process.poll() is not None:
                 break
             if output:
-                self._update_output(output)
+                output_lines.append(output)
+                if show_output:
+                    self._update_output(output)
 
-        if process.returncode != 0:
-            self.show_error_gui(f"Command failed: {command}")
+        returncode = process.wait()
+
+        if returncode != 0:
+            # Show only last few lines of error if output was suppressed
+            error_summary = "".join(output_lines[-10:]) if not show_output else ""
+            self.show_error_gui(f"Command failed: {command}\n{error_summary}")
             return False
+
         return True
 
     def update_output_gui(self, text):
