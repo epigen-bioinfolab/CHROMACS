@@ -27,7 +27,7 @@ if (is.na(q_threshold) || q_threshold < 0 || q_threshold > 1) {
   stop("Invalid q-value threshold. Must be between 0 and 1.")
 }
 
-# ===================== Load Data =====================
+# data load
 counts_dt <- fread(counts_file)
 metadata <- fread(metadata_file)
 pid <- counts_dt$peak_id
@@ -38,31 +38,31 @@ if (!all(sample_ids %in% colnames(counts_dt))) {
 }
 counts_dt <- counts_dt[, sample_ids, with = FALSE]
 
-# Subset and convert
+# subset
 counts <- as.matrix(counts_dt)
 rownames(counts) <- pid
 
-# ===================== Factors =====================
+#factors
 factors <- data.frame(condition = conditions)
 rownames(factors) <- sample_ids
-# Explicitly set untreated as reference (baseline)
-factors$condition <- factor(factors$condition, levels = c("treated", "untreated"))
+# baseline setup
+factors$condition <- factor(factors$condition, levels = c("test", "baseline"))
 
-# ===================== NOISeq Object & Normalize =====================
+
 mydata <- readData(data = counts, factors = factors)
 myTMM <- tmm(exprs(mydata), long = 1000, lc = 0)
 myLog2 <- log2(myTMM + 1)
 
-# Filter out rows with all 0s
+
 keep <- rowSums(counts) > 0
 counts <- counts[keep, ]
 myTMM <- myTMM[keep, ]
 myLog2 <- myLog2[keep, ]
 
-# Updated NOISeq object
+
 mydata_filtered <- readData(data = counts, factors = factors)
 
-# ===================== Run NOISeq =====================
+#noiseq run
 myresults <- noiseq(
   mydata_filtered,
   factor = "condition",
@@ -75,26 +75,26 @@ myresults <- noiseq(
   replicates = "no"
 )
 
-# Try to get DE genes with q 
+# de genes
 res_all <- myresults@results[[1]]
 de_res <- tryCatch({
   degenes(myresults, q = q_threshold, M = NULL)
 }, error = function(e) {
-  warning("⚠️ degenes() failed; using all features instead.")
+  warning(" degenes() failed; using all features instead.")
   res_all
 })
 
 if (nrow(de_res) == 0) {
-  warning("⚠️ No DE features detected; using all results.")
+  warning("No DE features detected; using all results.")
   de_res <- res_all
 }
 
-# ============ Final Output Assembly ================
+#output assembly
 colnames(myTMM) <- paste0("TMM:", colnames(myTMM))
 colnames(myLog2) <- paste0("log2TMM:", colnames(myLog2))
 
 filtered_rows <- rownames(de_res)
-filtered_rows <- intersect(filtered_rows, rownames(counts))  # Prevent out-of-bounds error
+filtered_rows <- intersect(filtered_rows, rownames(counts))
 
 out_df <- data.frame(
   peak_id = filtered_rows,
@@ -104,34 +104,34 @@ out_df <- data.frame(
   res_all[filtered_rows, , drop = FALSE]
 )
 
-# ========= Split into gain and loss sites =========
+#loss and gain sites
 if ("M" %in% colnames(out_df)) {
   gain_sites <- subset(out_df, M > 0)
   loss_sites <- subset(out_df, M < 0)
   
-  # Save as TSV
+  
   fwrite(gain_sites, file = file.path(dirname(output_file), "NOISeq_gain_sites.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
   fwrite(loss_sites, file = file.path(dirname(output_file), "NOISeq_loss_sites.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
   message("Gain and loss site tables saved.")
 } else {
-  warning("⚠️ Cannot split into gain/loss: 'M' column missing in final output.")
+  warning("Cannot split into gain/loss: 'M' column missing in final output.")
 }
 
 
 
-# ============  Generate Plots ==============
+#plot
 message("Generating NOISeq diagnostic + volcano + PCA plots...")
 plot_file <- file.path(dirname(output_file), "NOISeq_plots.pdf")
 
 pdf(plot_file, width = 10, height = 8)
 
-# --- Built-in NOISeq plots ---
+#built-in plot
 DE.plot(myresults, q = q_threshold, graphic = "expr", log.scale = TRUE)
 DE.plot(myresults, q = q_threshold, graphic = "MD")
 
-# --- Volcano plot (safeguarded) ---
+#volcano plot
 if (!all(c("M", "prob") %in% colnames(res_all))) {
-  warning("⚠️ Missing 'M' or 'probability' in NOISeq results. Skipping volcano plot.")
+  warning("Missing 'M' or 'probability' in NOISeq results. Skipping volcano plot.")
 } else {
   volcano_df <- data.frame(
     M = res_all$M,
@@ -150,7 +150,7 @@ if (!all(c("M", "prob") %in% colnames(res_all))) {
   )
 }
 
-# --- PCA plot ---
+#pca plot
 pca <- prcomp(t(myLog2), scale. = TRUE)
 pca_df <- data.frame(pca$x, condition = factors$condition)
 ggplot(pca_df, aes(PC1, PC2, color = condition)) +
@@ -161,7 +161,7 @@ ggplot(pca_df, aes(PC1, PC2, color = condition)) +
 dev.off()
 message(" Plots saved to: ", plot_file)
 
-# ============ Final Output ============
+#final output
 write.xlsx(out_df, output_file, rowNames = FALSE)
 cat(paste(" NOISeq results written to:", output_file, "\n"))
 

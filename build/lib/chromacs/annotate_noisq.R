@@ -27,9 +27,7 @@ peak_counts_file <- args[2]
 assembly <- args[3]
 ref_dir <- args[4]
 
-# ===============================
-# Genome mapping and OrgDb logic
-# ===============================
+#genome mapping
 
 genome_mapping <- list(
   GRCh38 = list(sp="homo_sapiens", cap="Homo_sapiens", org_db="org.Hs.eg.db", tax_id=9606),
@@ -83,14 +81,11 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
   }
 }
 
-# ===============================
-# Setup
-# ===============================
-
+# setup
 annot_dir <- file.path(dirname(noisq_xlsx), "Annotated_NOISeq")
 dir.create(annot_dir, showWarnings=FALSE, recursive=TRUE)
 
-# Load peak counts
+# load
 lines <- readLines(peak_counts_file)
 lines <- lines[!grepl("^#", lines)]
 peak_df <- fread(paste(lines, collapse="\n"), sep="\t", header=TRUE)
@@ -100,9 +95,7 @@ if (!all(required_cols %in% colnames(peak_df))) {
 }
 setnames(peak_df, "Geneid", "peak_id")
 
-# ===============================
-# Function to annotate and save
-# ===============================
+#annotate and save
 
 annotate_from_table <- function(df, tag) {
   merged <- merge(peak_df, df, by = "peak_id")
@@ -143,16 +136,14 @@ annotate_from_table <- function(df, tag) {
   message("[✓] Annotated: ", tag)
 }
 
-# ===============================
-# Main Annotation Tasks
-# ===============================
+#tasks
 
-# 1. Annotate main noisq_results.xlsx
+#noisq_results.xlsx
 main_df <- read.xlsx(noisq_xlsx)
 if (!"peak_id" %in% colnames(main_df)) stop("Missing 'peak_id' column in main NOISeq results.")
 annotate_from_table(main_df, "noisq")
 
-# 2. Annotate gain/loss files (if present)
+#gain/loss files if present
 gain_file <- file.path(dirname(noisq_xlsx), "NOISeq_gain_sites.tsv")
 loss_file <- file.path(dirname(noisq_xlsx), "NOISeq_loss_sites.tsv")
 

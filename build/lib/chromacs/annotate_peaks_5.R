@@ -12,27 +12,24 @@ peak_dir <- args[1]
 assembly <- args[2]
 ref_dir  <- args[3]
 
-# ====================== Install & Load Required Packages ======================
+# ====================== install and load packages ======================
 
-# Ensure BiocManager is available
 if (!requireNamespace("BiocManager", quietly=TRUE)) {
   install.packages("BiocManager", repos="https://cran.rstudio.com")
 }
 
-# List of required Bioconductor packages
 bioc_pkgs <- c(
   "ChIPseeker", "clusterProfiler", "GenomicFeatures", "GenomicRanges",
   "rtracklayer", "txdbmaker", "AnnotationForge", "R.utils"
 )
 
-# Install any missing packages
 for (pkg in bioc_pkgs) {
   if (!requireNamespace(pkg, quietly=TRUE)) {
     BiocManager::install(pkg, ask=FALSE, update=FALSE)
   }
 }
 
-# Load all packages now that they're confirmed installed
+
 suppressPackageStartupMessages({
   library(ChIPseeker)
   library(clusterProfiler)
@@ -47,7 +44,7 @@ suppressPackageStartupMessages({
 })
 #==============================================================================#
 
-# genome_mapping
+#genome map
 genome_mapping <- list(
   GRCh38 = list(sp="homo_sapiens", cap="Homo_sapiens", org_db="org.Hs.eg.db", tax_id=9606),
   GRCm39 = list(sp="mus_musculus", cap="Mus_musculus", org_db="org.Mm.eg.db", tax_id=10090),
@@ -62,12 +59,10 @@ genome_mapping <- list(
   gorGor4 = list(sp="gorilla_gorilla", cap="Gorilla_gorilla", org_db="org.Gor.eg.db", tax_id=9593), # no such org_db found
   Mmul_10 = list(sp="macaca_mulatta", cap="Macaca_mulatta", org_db="org.Mmu.eg.db", tax_id=9544),
   
-  # Fish & Amphibians
   GRCz11 = list(sp="danio_rerio", cap="Danio_rerio", org_db="org.Dr.eg.db", tax_id=7955),
   UCB_Xtro_10.0 = list(sp="xenopus_tropicalis", cap="Xenopus_tropicalis", org_db="org.Xt.eg.db", tax_id=8364), # no such org_db found
   Ssal_v3.1 = list(sp="salmo_salar", cap="Salmo_salar", org_db="org.Ssa.eg.db", tax_id=8030), # no such org_db found
-  
-  # Invertebrates
+
   BDGP6 = list(sp="drosophila_melanogaster", cap="Drosophila_melanogaster", org_db="org.Dm.eg.db", tax_id=7227),
   WBcel235 = list(sp="caenorhabditis_elegans", cap="Caenorhabditis_elegans", org_db="org.Ce.eg.db", tax_id=6239)
 )
@@ -75,11 +70,10 @@ genome_mapping <- list(
 info <- genome_mapping[[assembly]]
 if (is.null(info)) stop("No mapping for assembly: ", assembly)
 
-# Path to GTF
 gtf_file <- file.path(ref_dir, paste0(assembly, ".gtf"))
 if (!file.exists(gtf_file)) stop("GTF file not found at: ", gtf_file)
 
-# Build or load TxDb
+#load txdb or build
 txdb_file <- file.path(ref_dir, paste0("TxDb_", assembly, ".sqlite"))
 if (!file.exists(txdb_file)) {
   message("Building TxDb from GTF…")
@@ -90,18 +84,17 @@ if (!file.exists(txdb_file)) {
 }
 
 
-# OrgDb handling logic
-org_pkg <- info$org_db  # Get the OrgDb package name from genome_mapping
+#orgdb
+org_pkg <- info$org_db
 org_version <- "1.0"
 org_tar     <- file.path(ref_dir, paste0(org_pkg, "_", org_version, ".tar.gz"))
 
-# Check if OrgDb is already installed
+
 if (requireNamespace(org_pkg, quietly=TRUE)) {
   message("Loading installed OrgDb: ", org_pkg)
   suppressPackageStartupMessages(library(org_pkg, character.only=TRUE))
   
 } else {
-  # Try installing OrgDb from Bioconductor
   if (requireNamespace("BiocManager", quietly=TRUE)) {
     tryCatch({
       message("Attempting to install OrgDb from Bioconductor: ", org_pkg)
@@ -112,14 +105,12 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
     })
   }
   
-  # If installation from Bioconductor fails, attempt to install from tarball if available
   if (!requireNamespace(org_pkg, quietly=TRUE) && file.exists(org_tar)) {
     message("Installing cached OrgDb from: ", org_tar)
     install.packages(org_tar, repos=NULL, type="source")
     suppressPackageStartupMessages(library(org_pkg, character.only=TRUE))
   }
 
-  # If still not available, try to build the OrgDb from the GTF file using AnnotationForge
   if (!requireNamespace(org_pkg, quietly=TRUE)) {
     message("Building OrgDb from GTF using AnnotationForge…")
     if (!requireNamespace("AnnotationForge", quietly=TRUE)) {
@@ -127,11 +118,9 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
     }
     library(AnnotationForge)
     
-    # Import GTF and extract gene entries
     gtf <- rtracklayer::import(gtf_file)
     genes <- gtf[gtf$type == "gene"]
     
-    # Create a gene_info data.frame
     gene_info <- data.frame(
       GID = genes$gene_id,
       SYMBOL = genes$gene_name,
@@ -139,17 +128,15 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
       stringsAsFactors = FALSE
     )
     
-    # Remove duplicate GIDs and genes with missing SYMBOLs
     gene_info <- gene_info[!duplicated(gene_info$GID), ]
     gene_info <- gene_info[!is.na(gene_info$SYMBOL), ]
     
-    # Build OrgDb package using AnnotationForge
     gs <- strsplit(info$sp, "_")[[1]]
     genus <- tools::toTitleCase((gs[1]))
     species <- gs[2]
     
     AnnotationForge::makeOrgPackage(
-      gene_info = gene_info,          # Data.frame with GID as first column
+      gene_info = gene_info,        
       version = org_version,
       maintainer = "KI <KI@epigenbioinfo.org>",
       author = "KI",
@@ -161,18 +148,16 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
       verbose = TRUE
     )
     
-    # Try installing the newly built OrgDb from the tarball
     install.packages(org_tar, repos=NULL, type="source")
     suppressPackageStartupMessages(library(org_pkg, character.only=TRUE))
   }
   
-  # If still no OrgDb available, proceed without it
   if (!requireNamespace(org_pkg, quietly=TRUE)) {
     message("Proceeding without OrgDb package.")
   }
 }
 
-# Annotation
+#annotation
 annotated_dir <- file.path(peak_dir, "Annotated_Peaks")
 dir.create(annotated_dir, showWarnings=FALSE)
 
@@ -190,24 +175,23 @@ process_peak_file <- function(peak_file) {
   gr <- GRanges(peaks[[1]], IRanges(peaks[[2]], peaks[[3]]))
   ann <- annotatePeak(gr, TxDb=txdb, annoDb=info$org_db, tssRegion=c(-3000,3000))
   
-  # Clean annotation fields to remove line breaks/tabs
   df_ann <- as.data.frame(ann)
   df_ann[] <- lapply(df_ann, function(x) {
     if (is.character(x)) {
-      x <- gsub("[\r\n\t]+", " ", x)   # Remove all newline/tab characters
-      x <- gsub(" +", " ", x)          # Collapse multiple spaces
-      trimws(x)                        # Trim leading/trailing spaces
+      x <- gsub("[\r\n\t]+", " ", x)  
+      x <- gsub(" +", " ", x)          
+      trimws(x)                     
     } else {
       x
     }
   })
 
   
-  # Save results
+  #save
   output_file <- file.path(annotated_dir, paste0(name, "_annotated.tsv"))
   write.table(df_ann, output_file, sep="\t", quote=TRUE, row.names=FALSE, col.names=TRUE)
   
-  # Generate PDF visualization
+  # pdf
   pdf(file.path(annotated_dir, paste0("AnnotVis_", name, "_combined.pdf")))
   vennpie(ann)
   grid.newpage()

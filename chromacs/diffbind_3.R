@@ -3,19 +3,15 @@
 # R Script: diffbind_3.R
 # ===============================
 
-#!/usr/bin/env Rscript
 args <- commandArgs(trailingOnly=TRUE)
 
 # =============================================================================#
-# Install missing Bioconductor packages
 if (!requireNamespace("BiocManager", quietly=TRUE)) {
   install.packages("BiocManager", repos="https://cran.rstudio.com")
 }
 
-# List of Bioconductor packages needed
 biocPkgs <- c("DiffBind", "ggplot2", "rtracklayer")
 
-# Install any that are missing
 for (pkg in biocPkgs) {
   if (!requireNamespace(pkg, quietly=TRUE)) {
     BiocManager::install(pkg, ask=FALSE, update=FALSE)
@@ -29,7 +25,6 @@ suppressPackageStartupMessages({
 
 #==============================================================================#
 
-# Input validation
 if(length(args) < 2) {
   stop("Usage: Rscript diffbind_3.R <out_csv> <out_dir> [fdr_threshold]")
 }
@@ -51,7 +46,7 @@ if(!file.exists(metadata_path)) {
 metadata <- read.csv(metadata_path)
 
 
-# Count how many replicates per condition
+#count replicates per condn
 rep_counts <- table(metadata$Condition)
 if (length(rep_counts) < 2) {
   stop("Need at least two conditions in metadata")
@@ -62,7 +57,7 @@ message("Detected replicate counts per condition:\n",
         "\nUsing minMembers = ", min_reps)
 
 
-# DiffBind analysis
+#diffbind analysis
 tryCatch({
   dbObj <- dba(sampleSheet = metadata)
   
@@ -73,56 +68,68 @@ tryCatch({
   
   dbObj <- dba.count(dbObj)
   
-  # Auto-create exactly one contrast, allowing groups down to min_reps
+  # consensus peaks
+  consensus_gr <- dba.peakset(dbObj, bRetrieve=TRUE, DataType=DBA_DATA_GRANGES)
+  names(consensus_gr) <- as.character(seq_along(consensus_gr))
+  rtracklayer::export(consensus_gr, file.path(output_dir, "consensus_peaks_for_fimo.bed"))
+  
+  
   dbObj <- dba.contrast(dbObj,
                         categories = DBA_CONDITION,
                         minMembers = min_reps,
-                        reorderMeta = list(Condition="untreated")) # ensures untreated as baseline
+                        reorderMeta = list(Condition="baseline")) # ensures the baseline
   
   dbObj <- dba.analyze(dbObj, bBlacklist = FALSE, bGreylist = FALSE)
   
-  # Save results
-  results <- dba.report(dbObj, th = fdr_thresh)
-  write.csv(as.data.frame(results), 
-            file.path(output_dir, "diffbind_results.csv"))
+  results_gr <- dba.report(dbObj, th = fdr_thresh)
+  
+  #peakID
+  consensus_gr <- dba.peakset(dbObj, bRetrieve=TRUE, DataType=DBA_DATA_GRANGES)
+  consensus_df <- as.data.frame(consensus_gr)
+  results_df <- as.data.frame(results_gr)
+  coord_key <- function(gr) paste0(seqnames(gr), ":", start(gr), "-", end(gr))
+  consensus_coords <- coord_key(consensus_gr)
+  results_coords <- coord_key(results_gr)
+  peak_id_map <- match(results_coords, consensus_coords)
+  results_df <- cbind(PeakID = as.character(peak_id_map), results_df)
+  
+  # Save
+  write.csv(results_df, file.path(output_dir, "diffbind_results.csv"), row.names = FALSE)
   
   
 # ============================================================================
-  # Generate plots
+  #plots
   pdf(file.path(output_dir, "diffbind_enhanced_plots.pdf"))
   
-  # 1. Correlation Heatmap
+  #correlation heatmap
   try(dba.plotHeatmap(dbObj, correlations=TRUE))
   
-  # 2. PCA Plot
+  #pca
   try(dba.plotPCA(dbObj, attributes=DBA_CONDITION))
   
-  # 3. MA Plot
+  #ma
   try(dba.plotMA(dbObj))
   
-  # 4. Volcano Plot
+  #volcano
   try(dba.plotVolcano(dbObj))
   
-  # 5. Boxplots
+  #box
   try(dba.plotBox(dbObj))
   
-  # 6. Binding Affinity Heatmap
+  #affinity hm
   try(dba.plotHeatmap(dbObj, contrast=1, correlations=FALSE, 
                       scale="row", colScheme = colorRampPalette(c("blue", "white", "red"))(256)))
   
   dev.off()
   
-  # Additional Outputs --------------------------------------------------------
-  # Save normalized read counts
+  # extra outputs
   norm_counts <- dba.peakset(dbObj, bRetrieve=TRUE, DataType=DBA_DATA_FRAME)
   write.csv(norm_counts, file.path(output_dir, "normalized_counts.csv"))
   
-  # Save DB sites as BED files
   gr <- dba.report(dbObj, th=fdr_thresh, DataType=DBA_DATA_GRANGES)
   rtracklayer::export(gr[gr$Fold > 0], file.path(output_dir, "gain_sites.bed"))
   rtracklayer::export(gr[gr$Fold < 0], file.path(output_dir, "loss_sites.bed"))
   
-  # Save session info
   writeLines(capture.output(sessionInfo()), file.path(output_dir, "session_info.txt"))
   
 }, error = function(e) {

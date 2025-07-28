@@ -30,8 +30,12 @@ dependencies:
 
   # Python
   - pandas
+  - numpy
+  - scipy
+  - statsmodels
   - pyyaml
-  - tk=8.6.13=xft_h2e05e87_1                  
+  - openpyxl
+  - tk=8.6.13=xft_h2e05e87_1                
 
   # CLI Tools
   - bowtie2
@@ -45,4 +49,11 @@ dependencies:
   - deeptools
   - subread
   - aria2
+  - meme
+  
   - pip
+  - pip:
+      - matplotlib
+      - seaborn
+      - fpdf
+      - pillow

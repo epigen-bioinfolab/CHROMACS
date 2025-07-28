@@ -43,12 +43,10 @@ genome_mapping <- list(
   gorGor4 = list(sp="gorilla_gorilla", cap="Gorilla_gorilla", org_db="org.Gor.eg.db", tax_id=9593), # no such org_db found
   Mmul_10 = list(sp="macaca_mulatta", cap="Macaca_mulatta", org_db="org.Mmu.eg.db", tax_id=9544),
   
-  # Fish & Amphibians
   GRCz11 = list(sp="danio_rerio", cap="Danio_rerio", org_db="org.Dr.eg.db", tax_id=7955),
   UCB_Xtro_10.0 = list(sp="xenopus_tropicalis", cap="Xenopus_tropicalis", org_db="org.Xt.eg.db", tax_id=8364), # no such org_db found
   Ssal_v3.1 = list(sp="salmo_salar", cap="Salmo_salar", org_db="org.Ssa.eg.db", tax_id=8030), # no such org_db found
   
-  # Invertebrates
   BDGP6 = list(sp="drosophila_melanogaster", cap="Drosophila_melanogaster", org_db="org.Dm.eg.db", tax_id=7227),
   WBcel235 = list(sp="caenorhabditis_elegans", cap="Caenorhabditis_elegans", org_db="org.Ce.eg.db", tax_id=6239)
 )
@@ -57,22 +55,22 @@ genome_mapping <- list(
 info <- genome_mapping[[assembly]]
 if (is.null(info)) stop("No mapping for assembly: ", assembly)
 
-# Load existing TxDb
+# txdb
 txdb_file <- file.path(ref_dir, paste0("TxDb_", assembly, ".sqlite"))
 if (!file.exists(txdb_file)) stop("TxDb not found. Run peak annotation first.")
 txdb <- loadDb(txdb_file)
 
-# OrgDb handling logic
+# orgdb
 org_pkg <- info$org_db
 org_version <- "1.0"
 org_tar <- file.path(ref_dir, paste0(org_pkg, "_", org_version, ".tar.gz"))
 
-# Check if OrgDb is installed
+
 if (requireNamespace(org_pkg, quietly=TRUE)) {
   message("Loading installed OrgDb: ", org_pkg)
   suppressPackageStartupMessages(library(org_pkg, character.only=TRUE))
 } else {
-  # Try installing OrgDb from Bioconductor
+
   if (requireNamespace("BiocManager", quietly=TRUE)) {
     tryCatch({
       message("Attempting to install OrgDb from Bioconductor: ", org_pkg)
@@ -83,14 +81,14 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
     })
   }
   
-  # If installation from Bioconductor fails, attempt to install from tarball if available
+
   if (!requireNamespace(org_pkg, quietly=TRUE) && file.exists(org_tar)) {
     message("Installing cached OrgDb from: ", org_tar)
     install.packages(org_tar, repos=NULL, type="source")
     suppressPackageStartupMessages(library(org_pkg, character.only=TRUE))
   }
   
-  # If still not available, try to build the OrgDb from GTF using AnnotationForge
+
   if (!requireNamespace(org_pkg, quietly=TRUE)) {
     message("Building OrgDb from GTF using AnnotationForge…")
     if (!requireNamespace("AnnotationForge", quietly=TRUE)) {
@@ -98,14 +96,14 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
     }
     library(AnnotationForge)
     
-    # Import GTF and extract gene entries
+
     gtf_file <- file.path(ref_dir, paste0(assembly, ".gtf"))
     if (!file.exists(gtf_file)) stop("GTF file not found at: ", gtf_file)
     
     gtf <- rtracklayer::import(gtf_file)
     genes <- gtf[gtf$type == "gene"]
     
-    # Create a gene_info data.frame
+
     gene_info <- data.frame(
       GID = genes$gene_id,
       SYMBOL = genes$gene_name,
@@ -113,17 +111,17 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
       stringsAsFactors = FALSE
     )
     
-    # Remove duplicate GIDs and genes with missing SYMBOLs
+
     gene_info <- gene_info[!duplicated(gene_info$GID), ]
     gene_info <- gene_info[!is.na(gene_info$SYMBOL), ]
     
-    # Build OrgDb package using AnnotationForge
+
     gs <- strsplit(info$sp, "_")[[1]]
     genus <- tools::toTitleCase((gs[1]))
     species <- gs[2]
     
     AnnotationForge::makeOrgPackage(
-      gene_info = gene_info,          # Data.frame with GID as first column
+      gene_info = gene_info,          
       version = org_version,
       maintainer = "KI <KI@epigenbioinfo.org>",
       author = "KI",
@@ -135,23 +133,23 @@ if (requireNamespace(org_pkg, quietly=TRUE)) {
       verbose = TRUE
     )
     
-    # Try installing the newly built OrgDb from the tarball
+    
     install.packages(org_tar, repos=NULL, type="source")
     suppressPackageStartupMessages(library(org_pkg, character.only=TRUE))
   }
   
-  # If still no OrgDb available, proceed without it
+  
   if (!requireNamespace(org_pkg, quietly=TRUE)) {
     message("Proceeding without OrgDb package.")
   }
 }
-# output directory
+#annot_prep
 annotated_dir <- file.path(diffbind_dir, "Annotated_DiffBind")
 dir.create(annotated_dir, recursive=TRUE, showWarnings=FALSE)
 
-# Helper to annotate and plot a GRanges object
+
 annotate_gr <- function(gr, name) {
-  # 1) for the annotation
+  
   ann <- annotatePeak(
     gr,
     TxDb      = txdb,
@@ -159,13 +157,13 @@ annotate_gr <- function(gr, name) {
     tssRegion = c(-3000, 3000)
   )
   
-  # 2) clean and export annotation table
+  
   df_ann <- as.data.frame(ann)
   df_ann[] <- lapply(df_ann, function(x) {
     if (is.character(x)) {
-      x <- gsub("[\r\n\t]+", " ", x)   # Remove all newline/tab characters
-      x <- gsub(" +", " ", x)          # Collapse multiple spaces
-      trimws(x)                        # Trim leading/trailing spaces
+      x <- gsub("[\r\n\t]+", " ", x)   
+      x <- gsub(" +", " ", x)          
+      trimws(x)                        
     } else {
       x
     }
@@ -179,21 +177,21 @@ annotate_gr <- function(gr, name) {
               row.names = FALSE,
               col.names = TRUE)
   
-  # 3) opens a combined PDF
+  
   out_pdf <- file.path(annotated_dir,
                        paste0("AnnotVis_", name, "_combined.pdf"))
   pdf(out_pdf, width=8, height=10)
   
-  # 3a) venn + pie
+  
   vennpie(ann)
   
-  # 3b) new page for summary text
+  
   grid.newpage()
   grid.text("Annotation Summary",
             x = 0.5, y = 0.95,
             gp = gpar(fontsize = 14, fontface = "bold"))
   
-  # capture and draw the summary of `ann`  
+   
   summary_text <- capture.output(print(ann))
   if (length(summary_text) > 0) {
     for (i in seq_along(summary_text)) {
@@ -205,7 +203,7 @@ annotate_gr <- function(gr, name) {
     }
   }
   
-  # 3c) final annotation pie
+  
   plotAnnoPie(ann)
   
   dev.off()
@@ -213,17 +211,17 @@ annotate_gr <- function(gr, name) {
   message("[✓] Annotated & plotted: ", name)
 }
 
-# 1) Annotate diffbind_results.csv 
+#annot
 csv_file <- file.path(diffbind_dir, "diffbind_results.csv")
 if (file.exists(csv_file)) {
   df <- read.csv(csv_file, stringsAsFactors=FALSE)
   cols_lower <- tolower(colnames(df))
 
-  # detect which naming scheme is present
+  # naming scheme
   if (all(c("chr","start","end") %in% cols_lower) ||
       all(c("seqnames","start","end") %in% cols_lower)) {
 
-    # pick the right column names
+    
     if ("seqnames" %in% cols_lower) {
       chr_col   <- colnames(df)[ which(cols_lower == "seqnames")[1] ]
     } else {
@@ -232,7 +230,7 @@ if (file.exists(csv_file)) {
     start_col <- colnames(df)[ which(cols_lower == "start")[1] ]
     end_col   <- colnames(df)[ which(cols_lower == "end")[1] ]
 
-    # build the GRanges
+    # build the grange
     gr_csv <- GRanges(
       seqnames = df[[chr_col]],
       ranges   = IRanges(
@@ -250,7 +248,7 @@ if (file.exists(csv_file)) {
   message("diffbind_results.csv not found in ", diffbind_dir)
 }
 
-# 2) Annotate each BED file in the directory
+# annotate the bed files
 bed_files <- list.files(diffbind_dir, pattern="\\.bed$", full.names=TRUE)
 if (length(bed_files) == 0) {
   message("No .bed files found in ", diffbind_dir)
