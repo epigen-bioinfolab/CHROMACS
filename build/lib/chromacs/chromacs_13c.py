@@ -26,6 +26,10 @@ from fpdf import FPDF
 from PIL import Image
 import time
 
+import json
+from collections import Counter
+import networkx as nx
+
 #font
 def load_custom_font(root):
     font_path = resource_filename("chromacs", "fonts/Roboto-Regular.ttf")
@@ -1626,7 +1630,7 @@ class ATACSeqPipeline:
                 except Exception as e:
                     self.root.after(0, lambda: self.show_error_gui(f"MACS3 crashed for {label}: {e}"))
                     return
-            self.root.after(0, lambda: self.update_output_gui("✅ MACS3 Peak Calling completed.\n"))
+            self.root.after(0, lambda: self.update_output_gui("MACS3 Peak Calling completed.\n"))
             if on_complete:
                 self.root.after(0, on_complete)
 
@@ -1663,7 +1667,7 @@ class ATACSeqPipeline:
                 self.root.after(0, lambda: self.diffbind_btn.config(state=tk.NORMAL))
                 timestamp = self.get_timestamp()
                 self.update_output_gui(f"\n✅ Pipeline execution complete! [{timestamp}]\n")
-                messagebox.showinfo("Pipeline Finished", "✅ All steps have completed successfully!")
+                messagebox.showinfo("Pipeline Finished", "All steps have completed successfully!")
             except Exception as e:
                 self.root.after(0, lambda: self.show_error_gui(f"Peak annotation failed: {e}"))
 
@@ -2377,7 +2381,7 @@ class ATACSeqPipeline:
         title_label.grid(row=0, column=0, columnspan=3, pady=10, sticky="n")
 
         file_selectors = [
-            ("Differential Peaks File (CSV/XLSX)", "motif_diff_file", 1),
+            ("Differential Peaks File (CSV/XLSX/TSV)", "motif_diff_file", 1),
             ("Merged Regions BED File (consensus_peaks_for_fimo)", "motif_bed_file", 2),
             ("Genome FASTA File", "motif_fasta_file", 3),
             ("Motif MEME File", "motif_meme_file", 4)
@@ -2448,10 +2452,6 @@ class ATACSeqPipeline:
         meme_file = self.motif_meme_file_entry.get()
         output_prefix = os.path.join(motif_out_dir, "motif")
 
-        if not all([diff_file, bed_file, fasta_file, meme_file]):
-            self.show_error_gui("Please fill in all required fields.")
-            return
-
         def worker():
             try:
                 import pandas as pd
@@ -2513,6 +2513,8 @@ class ATACSeqPipeline:
                     up_peaks = set(diff_df.loc[diff_df[fold_col] > 0, peakid_col].astype(str))
                     down_peaks = set(diff_df.loc[diff_df[fold_col] < 0, peakid_col].astype(str))
 
+                    motif_map = self.parse_meme_motif_names(meme_file)
+
                     fimo_df = pd.read_csv(fimo_output, sep='\t')
                     fimo_df.columns = [col.lstrip('#') for col in fimo_df.columns]  # remove '#' from header
                     fimo_df = fimo_df[['pattern name', 'sequence name', 'p-value']]
@@ -2567,8 +2569,10 @@ class ATACSeqPipeline:
                             percent_background = C / (C + D) if (C + D) > 0 else 0
                             log_odds = np.log2(odds) if odds > 0 else 0
 
+                            motif_name = motif_map.get(motif_id, motif_id)
                             results.append({
                                 'Motif': motif_id,
+                                'Motif_Name': motif_name,
                                 'Hits_in_diff': A,
                                 'Unhit_in_diff': B,
                                 'Hits_in_background': C,
@@ -2613,6 +2617,46 @@ class ATACSeqPipeline:
                 ]
                 self.create_pdf_report(plot_files, os.path.join(motif_out_dir, "motif_enrichment_report.pdf"))
 
+                plot_output_dir = os.path.join(motif_out_dir, "motif_gene_analysis")
+                os.makedirs(plot_output_dir, exist_ok=True)
+
+                self._update_output("Starting motif annotation...\n")
+                self.annotate_motif_results()
+
+                plot_output_dir = os.path.join(motif_out_dir, "motif_gene_analysis")
+                os.makedirs(plot_output_dir, exist_ok=True)
+
+                self._update_output("Loading json files...\n")
+                up_df = self.load_motif_data(os.path.join(motif_out_dir, "motif_up_annotated.json"))
+                down_df = self.load_motif_data(os.path.join(motif_out_dir, "motif_down_annotated.json"))
+
+                self._update_output("Plotting for upregulated...\n")
+                self.plot_top_motifs_by_genes(up_df, "Upregulated", os.path.join(plot_output_dir, "up_motifs_by_genes.png"))
+                self.plot_motif_gene_network(up_df, os.path.join(plot_output_dir, "up_motif_gene_network.png"))
+                self.plot_gene_expression_heatmap(up_df, "Upregulated", os.path.join(plot_output_dir, "up_gene_heatmap.png"))
+
+                self._update_output("Plotting for downregulated...\n")
+                self.plot_top_motifs_by_genes(down_df, "Downregulated", os.path.join(plot_output_dir, "down_motifs_by_genes.png"))
+                self.plot_motif_gene_network(down_df, os.path.join(plot_output_dir, "down_motif_gene_network.png"))
+                self.plot_gene_expression_heatmap(down_df, "Downregulated",
+                                             os.path.join(plot_output_dir, "down_gene_heatmap.png"))
+
+                self._update_output("Plotting for combined...\n")
+                combined_df = pd.concat([up_df, down_df])
+                self.plot_top_motifs_by_genes(combined_df, "All Significant",
+                                         os.path.join(plot_output_dir, "combined_motifs_by_genes.png"))
+
+                plot_files.extend([
+                    os.path.join(plot_output_dir, "up_motifs_by_genes.png"),
+                    os.path.join(plot_output_dir, "up_motif_gene_network.png"),
+                    os.path.join(plot_output_dir, "up_gene_heatmap.png"),
+                    os.path.join(plot_output_dir, "down_motifs_by_genes.png"),
+                    os.path.join(plot_output_dir, "down_motif_gene_network.png"),
+                    os.path.join(plot_output_dir, "down_gene_heatmap.png"),
+                    os.path.join(plot_output_dir, "combined_motifs_by_genes.png")
+                ])
+
+                self._update_output("Plotting of motif:gene complete\n")
                 self.show_info_gui("Motif enrichment pipeline completed successfully!")
 
             except Exception as e:
@@ -2642,13 +2686,32 @@ class ATACSeqPipeline:
             entry.delete(0, tk.END)
             entry.insert(0, file_path)
 
+
+    def parse_meme_motif_names(self, meme_file):
+        motif_map = {}
+        with open(meme_file) as f:
+            for line in f:
+                if line.startswith('MOTIF'):
+                    parts = line.strip().split()
+                    if len(parts) >= 3:
+                        motif_id = parts[1]
+                        motif_name = parts[2]
+                        # uniqueness as motif name may be multiple times
+                        motif_label = f"{motif_name} ({motif_id})"
+                        motif_map[motif_id] = motif_label
+                    elif len(parts) == 2:
+                        motif_id = parts[1]
+                        motif_map[motif_id] = motif_id
+        return motif_map
+    
+#-------------------------------- motif enrichment plots ---------------------------------------------
     def plot_top_motifs_bar(self, df, group_name, out_file, top_n=20):
         self._update_output(f"Generating {group_name} bar plot...\n")
         df = df.copy()
         df['-log10(QValue)'] = -np.log10(df['QValue'] + 1e-10)
         df = df.sort_values('QValue').head(top_n)
         plt.figure(figsize=(10, 6))
-        sns.barplot(x='-log10(QValue)', y='Motif', data=df, hue='Motif', palette='viridis', legend=False)
+        sns.barplot(x='-log10(QValue)', y='Motif_Name', data=df, hue='Motif_Name', palette='viridis', legend=False)
         plt.title(f'Top {top_n} Enriched Motifs ({group_name})')
         plt.xlabel('-log10(Q-value)')
         plt.tight_layout()
@@ -2674,10 +2737,10 @@ class ATACSeqPipeline:
         self._update_output(f"Generating {up_df} vs {down_df} heatmap...\n")
         top_up = up_df.nsmallest(20, 'QValue')
         top_down = down_df.nsmallest(20, 'QValue')
-        top_motifs = set(top_up['Motif']).union(set(top_down['Motif']))
+        top_motifs = set(top_up['Motif_Name']).union(set(top_down['Motif_Name']))
 
-        up_df = up_df[up_df['Motif'].isin(top_motifs)].set_index('Motif')
-        down_df = down_df[down_df['Motif'].isin(top_motifs)].set_index('Motif')
+        up_df = up_df[up_df['Motif_Name'].isin(top_motifs)].set_index('Motif_Name')
+        down_df = down_df[down_df['Motif_Name'].isin(top_motifs)].set_index('Motif_Name')
 
         heatmap_df = pd.DataFrame({
             'Up': up_df['Log2_Odds_Ratio'],
@@ -2695,7 +2758,7 @@ class ATACSeqPipeline:
 
     def create_pdf_report(self, image_paths, pdf_path):
         self._update_output(f"Generating pdf from images...\n")
-        time.sleep(2)
+        time.sleep(4)
         
         pdf = FPDF()
         for img_path in image_paths:
@@ -2708,6 +2771,223 @@ class ATACSeqPipeline:
             pdf.add_page()
             pdf.image(img_path, x=0, y=0, w=img_w, h=img_h)
         pdf.output(pdf_path, "F")
+#-------------------------------------------------------------------------------------------------------
+
+    def annotate_motif_results(self):
+        base_dir = self.params["step1"]["base_output_dir"]
+        motif_out_dir = os.path.join(base_dir, "motif_results")
+        diff_file = self.motif_diff_file_entry.get()
+
+        try:
+            fimo_file = os.path.join(motif_out_dir, "motif_motifs.fimo.tsv")
+            fimo_df = pd.read_csv(fimo_file, sep='\t')
+            fimo_df.columns = [col.lstrip('#').strip() for col in fimo_df.columns]
+
+            fimo_df['peak_id'] = fimo_df['sequence name'].str.split('::').str[1]
+
+            analysis_type = "diffbind" if "diffbind" in diff_file.lower() else "noisq"
+
+            def load_annotations(analysis_type):
+                if analysis_type == "diffbind":
+                    gain_path = os.path.join(base_dir, "diffbind_results", "Annotated_DiffBind",
+                                             "gain_sites_annotated.tsv")
+                    loss_path = os.path.join(base_dir, "diffbind_results", "Annotated_DiffBind",
+                                             "loss_sites_annotated.tsv")
+                else:
+                    gain_path = os.path.join(base_dir, "noisq_results", "Annotated_NOISeq", "gain_sites_annotated.tsv")
+                    loss_path = os.path.join(base_dir, "noisq_results", "Annotated_NOISeq", "loss_sites_annotated.tsv")
+
+                # -1 for adjusting diffbind results (granges to bed)
+                try:
+                    gain_df = pd.read_csv(gain_path, sep='\t')
+                    loss_df = pd.read_csv(loss_path, sep='\t')
+
+                    def create_key(row, adjust_start=False):
+                        chr_col = next((col for col in ['seqnames', 'chr'] if col in row.index), None)
+                        if not chr_col:
+                            raise ValueError("Could not find chromosome column in annotation file")
+
+                        start = row['start'] - 1 if adjust_start else row['start']
+                        return f"{row[chr_col]}:{start}-{row['end']}"
+
+                    adjust_start = (analysis_type == "diffbind")
+                    gain_df['coord_key'] = gain_df.apply(create_key, axis=1, adjust_start=adjust_start)
+                    loss_df['coord_key'] = loss_df.apply(create_key, axis=1, adjust_start=adjust_start)
+
+                    return gain_df, loss_df
+
+                except Exception as e:
+                    self._update_output(f"Error loading annotation files: {str(e)}\n")
+                    raise
+
+            gain_df, loss_df = load_annotations(analysis_type)
+
+            def process_motif_file(motif_file, annotation_df, output_suffix):
+                try:
+                    motif_df = pd.read_csv(motif_file, sep='\t')
+                    sig_motifs = motif_df[motif_df['QValue'] < 0.05]
+
+                    if sig_motifs.empty:
+                        self._update_output(f"No significant motifs found for {output_suffix}\n")
+                        return
+
+                    motif_fimo = fimo_df[fimo_df['pattern name'].isin(sig_motifs['Motif'])]
+
+                    if motif_fimo.empty:
+                        self._update_output(f"No FIMO hits found for significant {output_suffix} motifs\n")
+                        return
+
+                    #debug
+                    self._update_output(f"\nFirst few FIMO peaks for {output_suffix}:\n{str(motif_fimo['peak_id'].head())}\n")
+                    self._update_output(f"First few annotation peaks:\n{str(annotation_df['coord_key'].head())}\n")
+
+
+                    merged = pd.merge(
+                        motif_fimo,
+                        annotation_df,
+                        left_on='peak_id',
+                        right_on='coord_key',
+                        how='left'
+                    )
+
+                    self._update_output(f"Merged {len(merged)} records for {output_suffix}\n")
+                    self._update_output(f"Merge success rate: {merged['coord_key'].notna().mean():.1%}\n")
+
+                    def aggregate_genes(group):
+                        gene_cols = ['SYMBOL', 'geneId', 'GENENAME', 'annotation', 'distanceToTSS']
+                        available_cols = [col for col in gene_cols if col in group.columns]
+
+                        if not available_cols:
+                            return {
+                                'genes': [],
+                                'peak_count': group['peak_id'].nunique(),
+                                'peaks': group['peak_id'].unique().tolist()
+                            }
+
+                        genes = group[available_cols].drop_duplicates()
+                        return {
+                            'genes': genes.to_dict('records'),
+                            'peak_count': group['peak_id'].nunique(),
+                            'peaks': group['peak_id'].unique().tolist()
+                        }
+
+                    motif_annotations = merged.groupby('pattern name').apply(aggregate_genes).reset_index()
+                    motif_annotations.columns = ['Motif', 'Annotations']
+
+                    final_df = pd.merge(
+                        sig_motifs,
+                        motif_annotations,
+                        on='Motif',
+                        how='left'
+                    )
+
+                    output_file = os.path.join(motif_out_dir, f"motif_{output_suffix}_annotated.json")
+                    final_df.to_json(output_file, orient='records', indent=2)
+                    self._update_output(f"Saved annotated {output_suffix} motifs to {output_file}\n")
+
+                except Exception as e:
+                    self._update_output(f"Error processing {output_suffix} motifs: {str(e)}\n")
+                    raise
+
+            process_motif_file(
+                os.path.join(motif_out_dir, "motif_up_enrichment.tsv"),
+                gain_df,
+                "up"
+            )
+            process_motif_file(
+                os.path.join(motif_out_dir, "motif_down_enrichment.tsv"),
+                loss_df,
+                "down"
+            )
+
+            self._update_output("Motif annotation completed successfully!\n")
+
+        except Exception as e:
+            self.show_error_gui(f"Error in motif annotation: {str(e)}")
+
+    def load_motif_data(self, json_path):
+        with open(json_path) as f:
+            data = json.load(f)
+
+        processed = []
+        for motif in data:
+            # Extract gene information
+            genes = [g for g in motif['Annotations']['genes'] if g['SYMBOL'] is not None]
+            gene_count = len(genes)
+            gene_symbols = [g['SYMBOL'] for g in genes if g['SYMBOL']]
+
+            processed.append({
+                'Motif': motif['Motif'],
+                'Motif_Name': motif['Motif_Name'],
+                'QValue': motif['QValue'],
+                'Log2_Odds_Ratio': motif['Log2_Odds_Ratio'],
+                'Gene_Count': gene_count,
+                'Genes': gene_symbols,
+                'Peak_Count': motif['Annotations']['peak_count'],
+                'Top_Genes': ', '.join(list(set(gene_symbols))[:5])  #first 5 unique genes
+            })
+
+        return pd.DataFrame(processed)
+
+#----------------------------------------------------motif annotation plots----------------------------------------
+    def plot_top_motifs_by_genes(self, df, title, output_path, top_n=20):
+        top_motifs = df.sort_values('Gene_Count', ascending=False).head(top_n)
+
+        plt.figure(figsize=(12, 8))
+        sns.barplot(data=top_motifs, x='Gene_Count', y='Motif_Name', hue='Motif_Name',
+                    palette='viridis', dodge=False, legend=False)
+
+        plt.title(f'Top {top_n} {title} Motifs by Number of Target Genes')
+        plt.xlabel('Number of Target Genes')
+        plt.ylabel('Motif')
+        plt.tight_layout()
+        plt.savefig(output_path)
+        plt.close()
+
+    def plot_motif_gene_network(self, df, output_path, top_motifs=10, top_genes=20):
+        top_motifs_df = df.sort_values('Gene_Count', ascending=False).head(top_motifs)
+        all_genes = [g for sublist in top_motifs_df['Genes'] for g in sublist]
+        gene_counts = Counter(all_genes)
+        top_genes = [gene for gene, count in gene_counts.most_common(top_genes)]
+
+        edges = []
+        for _, row in top_motifs_df.iterrows():
+            for gene in row['Genes']:
+                if gene in top_genes:
+                    edges.append((row['Motif_Name'], gene))
+
+        G = nx.Graph()
+        G.add_edges_from(edges)
+
+        plt.figure(figsize=(15, 10))
+        pos = nx.spring_layout(G, k=0.5)
+
+        nx.draw_networkx_nodes(G, pos, nodelist=top_motifs_df['Motif_Name'].tolist(),
+                               node_color='lightblue', node_size=2000, label='Motifs')
+        nx.draw_networkx_nodes(G, pos, nodelist=top_genes,
+                               node_color='lightgreen', node_size=1000, label='Genes')
+        nx.draw_networkx_edges(G, pos, width=1.0, alpha=0.5)
+        nx.draw_networkx_labels(G, pos, font_size=10)
+
+        plt.title(f'Network of Top {top_motifs} Motifs and Their Target Genes')
+        plt.legend()
+        plt.axis('off')
+        plt.savefig(output_path)
+        plt.close()
+
+    def plot_gene_expression_heatmap(self, df, title, output_path):
+        all_genes = [g for sublist in df['Genes'] for g in sublist]
+        gene_counts = pd.Series(all_genes).value_counts().head(20)
+
+        plt.figure(figsize=(10, 8))
+        sns.barplot(x=gene_counts.values, y=gene_counts.index, palette='rocket')
+        plt.title(f'Most Frequent Target Genes in {title} Motifs')
+        plt.xlabel('Number of Motifs Binding This Gene')
+        plt.ylabel('Gene Symbol')
+        plt.tight_layout()
+        plt.savefig(output_path)
+        plt.close()
+
 
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
