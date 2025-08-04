@@ -142,7 +142,7 @@ class ATACSeqPipeline:
 
         title_font = ("Roboto", 16, "bold") if self.roboto_font else ("Helvetica", 16, "bold")
         title_label = tk.Label(left_frame,
-                               text="CHROMACS: Chromatin Accessibility Analysis Suite",
+                               text="ChromAcS: Chromatin Accessibility Analysis Suite",
                                bg="#800000", fg="white", font=title_font)
         title_label.pack(side=tk.LEFT, padx=5, pady=(BAR_HEIGHT // 4, BAR_HEIGHT // 4))
 
@@ -2398,7 +2398,7 @@ class ATACSeqPipeline:
         self.noisq_peak_listbox.bind('<<ListboxSelect>>', lambda e: self.build_noisq_param_rows())
 
         instruction_1 = (
-            "IMPORTANT: “Prove baseline and test condition accordingly\n"
+            "IMPORTANT: “Input the baseline and test condition accordingly\n"
             "Think baseline as your reference, and test as the comparison group\n"
             "These labels can represent any two biological states — e.g.:\n"
             "Baseline = Lung tissue, Test = Kidney tissue\n"
@@ -3040,8 +3040,12 @@ class ATACSeqPipeline:
             fimo_df = pd.read_csv(fimo_file, sep='\t')
             fimo_df.columns = [col.lstrip('#').strip() for col in fimo_df.columns]
 
-            fimo_df[['peak_id', 'coord_key']] = fimo_df['sequence name'].str.split('::', expand=True)
-            fimo_df['coord_key'] = fimo_df['coord_key'].str.replace('_', ':')
+            split_result = fimo_df['sequence name'].str.extract(r'^([^:]+)::(.+)$')
+            fimo_df['peak_id'] = split_result[0]
+            fimo_df['coord_key'] = split_result[1]
+
+            if fimo_df['peak_id'].isnull().any():
+                raise ValueError("Failed to extract peak_id from some sequence names")
 
             analysis_type = "diffbind" if "diffbind" in diff_file.lower() else "noisq"
 
@@ -3088,12 +3092,14 @@ class ATACSeqPipeline:
                         self._update_output(f"No significant motifs found for {output_suffix}\n")
                         return
 
-                    motif_fimo = fimo_df[fimo_df['pattern name'].isin(sig_motifs['Motif'])]
+                    motif_fimo = fimo_df[fimo_df['pattern name'].isin(sig_motifs['Motif'])] \
+                        .rename(columns={'peak_id': 'fimo_peak_id'})
 
                     if motif_fimo.empty:
                         self._update_output(f"No FIMO hits found for significant {output_suffix} motifs\n")
                         return
 
+                    # merge
                     merged = pd.merge(
                         motif_fimo,
                         annotation_df,
@@ -3116,7 +3122,22 @@ class ATACSeqPipeline:
                         else:
                             genes = []
 
-                        peaks = sorted(grp['peak_id'].dropna().unique().tolist())
+                        # pick the correct peak id column
+                        if 'fimo_peak_id' in grp:
+                            peak_col = 'fimo_peak_id'
+                        elif 'peak_id' in grp:
+                            peak_col = 'peak_id'
+                        elif 'peak_id_x' in grp:
+                            peak_col = 'peak_id_x'
+                        elif 'peak_id_y' in grp:
+                            peak_col = 'peak_id_y'
+                        else:
+                            peak_col = None
+
+                        if peak_col:
+                            peaks = sorted(grp[peak_col].dropna().unique().tolist())
+                        else:
+                            peaks = []
                         peak_count = len(peaks)
 
                         records.append({
