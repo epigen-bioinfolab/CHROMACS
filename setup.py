@@ -18,8 +18,9 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': [
-            'chromacs=chromacs.chromacs_13c:main',
+    'console_scripts': [
+        'chromacs=chromacs.chromacs_13c:main',
+        'chromacs-overlap-expr=chromacs.chromacs_overlap_expr:main',
         ],
     },
 )

@@ -1,27 +1,51 @@
+
+<div style="display: flex; align-items: center;">
+  <img src="chromacs/assets/ChromAcS.png" alt="ChromAcS Logo" width="120" style="margin-left: 40px;" />
+  <div>
+  
 # **ChromAcS**
-> **Graphical user interface for Chromatin Accessibility Studies from ATAC-seq datasets**
+
+> **An Automated, Flexible GUI for End-to-End Reproducible ATAC-seq Analysis Across Multiple Species**
+
+  </div>
+</div>
 
 
 
 ## 📖 About
 
-ChromAcS (Chromatin Accessibility Studies) provides a streamlined, GUI-based workflow for analyzing ATAC-seq data, including:
+ChromAcS (***Chrom***atin ***Ac***cessibility ***S***tudies) provides a streamlined, GUI-based workflow for analyzing ATAC-seq data. Shown below are the major analysis steps which have been incorporated with several related dependencies in a hierarchical and modular manner designed for the best user experience and easy navigation:
 
 - Quality Control (`FastQC, MultiQC`) ==> of both raw reads and trimmed reads;
 
 - Trimming (`Trim Galore`) ==> optional (users can opt for working with raw data or their own trimmed data saved in "raw data directory");
 
-- Genome Alignment and Coverage Analysis(`Bowtie2, Samtools, DeepTools`) ==> flexible with several model organisms and beyond, (uses Ensembl toplevel reference);
+- Genome Alignment and Coverage Analysis(`bowtie2, SAMtools, deepTools`) ==> flexible with several model organisms and beyond, (uses Ensembl toplevel reference);
 
 - Peak Calling (`Genrich or MACS3`) ==> employes two different peak calling tools, users can select any of the two, with several options for parameter setup;
 
 - Peak Annotation (`ChIPseeker`) ==> builds own txDB by fetching GTF files from ENSEMBL, uses default orgdb from bioconductor;
 
-- Differential Peak Analysis (`Diffbind or NOISeq`) ==> employs Diffbind to visualize differential studies and also generates essential up- and downgraded regions; includes annotation of those regions as well; in absence of biological replicates, users can opt for NOISeq which allows the same differential studies (however, if you have more than one biological replicates, it is recommended to use Diffbind)
+- Differential Peak Analysis (`DiffBind or NOISeq`) ==> employs Diffbind to visualize differential studies and also generates essential up- and downgraded regions; includes annotation of those regions as well; in absence of biological replicates, users can opt for NOISeq which allows the same differential studies (however, if you have more than one biological replicates, it is recommended to use Diffbind)
+
+- Motif Enrichment Analysis (`MEME Suite (FIMO)`) ==> performs transcription factor motif enrichment on differential peak sets using a user-provided .meme file (e.g., from JASPAR). For significant motif hits, it further annotates predicted motif-to-gene associations, linking enriched motifs to nearby genes.
+
+- Peak Overlap and Expression Data Overlap  (`BEDTools`) ==> provided as a separate add-on (chromacs-overlap-expr), this utility overlaps user-supplied BED files with ChromAcS peak results to identify shared genomic regions. Also integrates expression data (e.g., RNA-seq) by matching identifiers, enabling the user to relate chromatin accessibility peaks to gene expression profiles.
 
 
 Designed to assist both beginners and experienced users in analyzing chromatin accessibility with minimal command-line usage
 
+## ⚠️ Pre-requisites
+
+Before installing ChromAcS, ensure you have the following:
+
+- **For Windows users:** [Windows Subsystem for Linux (Ubuntu)](https://learn.microsoft.com/en-us/windows/wsl/install)
+  
+- **For Linux users:** Tested on [Ubuntu](https://ubuntu.com/download) and [Fedora](https://getfedora.org/); but should work in any other linux terminal including Mac OS.
+  
+- **Git (optional):** [Install Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+  
+- **Conda:** [Install Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
 
 
 ## 📥 Installation
@@ -38,7 +62,7 @@ If you download the zip file from the repository, ensure to avoid the above step
 1. Go to https://github.com/epigen-bioinfolab/CHROMACS
 2. Click the green Code button → Download ZIP
 3. Extract the ZIP file.
-The folder will be named CHROMACS-main. Configure to the CHROMACS-main
+The folder will be named CHROMACS-main. (Using Linux terminal command) Configure to the CHROMACS-main
 ```bash
 cd CHROMACS-main
 ```
@@ -59,13 +83,17 @@ pip install .
 chromacs
 ```
 
+#### Step 4a (Add-on): Launch the overlapper-expression application :
+```bash
+chromacs-overlap-expr
+```
+
 
 ## Acknowledgements
 
-- FastQC, MultiQC, Trim Galore, Bowtie2, MACS3, Genrich, ChIPseeker, DiffBind, NOISeq; along with their dependencies
-- Bioconda, Conda-Forge community
+- FastQC, MultiQC, Trim Galore, bowtie2, MACS3, Genrich, ChIPseeker, DiffBind, NOISeq, deepTools, MEME Suite; along with their dependencies
+- Bioconda, Conda-Forge community, Python Software Foundation and the Python community
 
 
 ## 📝 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-

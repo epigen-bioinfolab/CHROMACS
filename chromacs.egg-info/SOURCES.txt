@@ -7,6 +7,7 @@ chromacs/annotate_diffbind.R
 chromacs/annotate_noisq.R
 chromacs/annotate_peaks_5.R
 chromacs/chromacs_13c.py
+chromacs/chromacs_overlap_expr.py
 chromacs/diffbind_3.R
 chromacs/noisq_atac.R
 chromacs.egg-info/PKG-INFO

@@ -2,6 +2,8 @@ import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import filedialog, messagebox
 from tkinter import ttk
+from tkinter import simpledialog
+
 import subprocess
 import os
 import threading
@@ -30,16 +32,15 @@ import json
 from collections import Counter
 import networkx as nx
 
-#font
+from collections import defaultdict
+
 def load_custom_font(root):
     font_path = resource_filename("chromacs", "fonts/Roboto-Regular.ttf")
-
     if os.path.exists(font_path):
         try:
-            roboto_font = tkFont.Font(root=root, family="Roboto", size=10)
+            roboto_font = tkFont.Font(family="Roboto", size=10)
             print(f"Successfully loaded custom font: {font_path}")
             return roboto_font
-
         except Exception as e:
             print(f"Error loading custom font: {e}")
             return None
@@ -54,55 +55,18 @@ class ATACSeqPipeline:
         self.root.title("CHROMACS")
         self.root.geometry("950x800")
 
-        top_logo_frame = tk.Frame(self.root)
-        top_logo_frame.pack(side="top", fill="x", pady=(5, 10), padx=10)
-
-        #chromacs logo
-        chromacs_logo_path = resource_filename("chromacs", "assets/ChromAcS.png")
-        if os.path.exists(chromacs_logo_path):
-            chromacs_logo_img = tk.PhotoImage(file=chromacs_logo_path).subsample(3, 3)
-            chromacs_logo_label = tk.Label(top_logo_frame, image=chromacs_logo_img)
-            chromacs_logo_label.image = chromacs_logo_img
-            chromacs_logo_label.pack(side="left")
-
-        #lab logo
-        lab_frame = tk.Frame(top_logo_frame)
-        lab_frame.pack(side="right")
-
-        lab_logo_path = resource_filename("chromacs", "assets/lab_logo.png")
-        if os.path.exists(lab_logo_path):
-            lab_logo_img = tk.PhotoImage(file=lab_logo_path).subsample(3, 3)
-            lab_logo_label = tk.Label(lab_frame, image=lab_logo_img)
-            lab_logo_label.image = lab_logo_img 
-            lab_logo_label.pack(side="left", padx=(0, 5))
-
-        def open_lab_website(event=None):
-            webbrowser.open("https://www.epigen-bioinfolab.com/")
-
-        lab_name_label = tk.Label(
-            lab_frame,
-            text="Epigen-BioinfoLab",
-            font=("Roboto", 11, "bold"),
-            fg="Green",
-            cursor="hand2"
-        )
-        lab_name_label.pack(side="left")
-        lab_name_label.bind("<Button-1>", open_lab_website)
-
-        #title bar
-        icon_path = resource_filename("chromacs", "assets/ChromAcS.xbm")
-        if os.path.exists(icon_path):
-            self.root.iconbitmap(f"@{icon_path}")
-
-        #custom font
         self.roboto_font = load_custom_font(self.root)
-
         if self.roboto_font:
             style = ttk.Style()
             style.configure('.', font=self.roboto_font)
         else:
             style = ttk.Style()
             style.configure('.', font=("TkDefaultFont", 10))
+
+        self._make_title_bar()
+
+        self.main_frame = tk.Frame(self.root)
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=(0, 10))
 
         self.params = {
             "step1": {},
@@ -112,8 +76,8 @@ class ATACSeqPipeline:
             "step5": {}
         }
 
-        self.notebook = ttk.Notebook(self.root)
-        self.notebook.pack(fill="both", expand=True)
+        self.notebook = ttk.Notebook(self.main_frame)
+        self.notebook.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
         self.step1_frame = ttk.Frame(self.notebook)
         self.step2_frame = ttk.Frame(self.notebook)
@@ -121,18 +85,14 @@ class ATACSeqPipeline:
         self.step4_frame = ttk.Frame(self.notebook)
         self.step5_frame = ttk.Frame(self.notebook)
 
-        self.notebook.add(self.step1_frame, text="Step 1")
-        self.notebook.add(self.step2_frame, text="Step 2")
-        self.notebook.add(self.step3_frame, text="Step 3")
-        self.notebook.add(self.step4_frame, text="Step 4")
-        self.notebook.add(self.step5_frame, text="Step 5")
+        self.notebook.add(self.step1_frame, text="Step 1: Data Setup")
+        self.notebook.add(self.step2_frame, text="Step 2: Quality Control")
+        self.notebook.add(self.step3_frame, text="Step 3: Reference Selection")
+        self.notebook.add(self.step4_frame, text="Step 4: Peak Caller Selection")
+        self.notebook.add(self.step5_frame, text="Step 5: Analysis")
 
-        #disabling tabs
-        self.notebook.tab(1, state="disabled")
-        self.notebook.tab(2, state="disabled")
-        self.notebook.tab(3, state="disabled")
-        self.notebook.tab(4, state="disabled")
-
+        for i in range(1, 5):
+            self.notebook.tab(i, state="disabled")
 
         self.setup_step1_ui()
         self.setup_step2_ui()
@@ -140,22 +100,111 @@ class ATACSeqPipeline:
         self.setup_step4_ui()
         self.setup_step5_ui()
 
+        self._setup_output_console()
 
-        main_bottom_frame = tk.Frame(self.root)
-        main_bottom_frame.pack(side="bottom", fill="both", expand=True)
+        self.status_bar = tk.Label(self.main_frame, text="ChromAcS v0.1", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 5))
+
+    def _make_title_bar(self):
+        BAR_HEIGHT = 90
+        self.title_bar = tk.Frame(self.root, bg="#800000", height=BAR_HEIGHT)
+        self.title_bar.pack(fill=tk.X)
+        self.title_bar.pack_propagate(False)
 
 
-        output_frame = tk.Frame(main_bottom_frame)
-        output_frame.pack(side="top", fill="both", expand=True, padx=10, pady=(10, 0))
+        left_frame = tk.Frame(self.title_bar, bg="#800000")
+        left_frame.pack(side=tk.LEFT, padx=10, pady=0)
+        left_frame.pack_propagate(True)
 
-        #text widget for real-time
-        self.output_text = tk.Text(output_frame, wrap=tk.WORD, height=20, width=100)
-        self.output_text.pack(side="left", fill="both", expand=True)
+        chromacs_logo_path = resource_filename("chromacs", "assets/ChromAcS.png")
+        if os.path.exists(chromacs_logo_path):
+            try:
+                img = tk.PhotoImage(file=chromacs_logo_path)
+                max_h = BAR_HEIGHT - 20
 
-        scrollbar = tk.Scrollbar(output_frame, command=self.output_text.yview)
-        scrollbar.pack(side="right", fill="y")
+                if img.height() > max_h:
+                    factor = max(1, img.height() // max_h)
+                    img = img.subsample(factor, factor)
 
+                self.chromacs_logo_img = img
+                logo_label = tk.Label(left_frame, image=img, bg="#800000", cursor="hand2")
+                logo_label.image = img
+                vertical_padding = (BAR_HEIGHT - img.height()) // 2
+                logo_label.pack(side=tk.LEFT, pady=vertical_padding)
+
+                def open_chromacs_site(event=None):
+                    webbrowser.open("https://github.com/epigen-bioinfolab/CHROMACS/tree/main")
+
+                logo_label.bind("<Button-1>", open_chromacs_site)
+
+            except Exception as e:
+                print(f"Could not load ChromAcS logo: {str(e)}")
+
+        title_font = ("Roboto", 16, "bold") if self.roboto_font else ("Helvetica", 16, "bold")
+        title_label = tk.Label(left_frame,
+                               text="CHROMACS: Chromatin Accessibility Analysis Suite",
+                               bg="#800000", fg="white", font=title_font)
+        title_label.pack(side=tk.LEFT, padx=5, pady=(BAR_HEIGHT // 4, BAR_HEIGHT // 4))
+
+        right_frame = tk.Frame(self.title_bar, bg="#800000")
+        right_frame.pack(side=tk.RIGHT, padx=10, pady=0)
+        right_frame.pack_propagate(True)
+
+        lab_logo_path = resource_filename("chromacs", "assets/lab_logo.png")
+        if os.path.exists(lab_logo_path):
+            try:
+                img = tk.PhotoImage(file=lab_logo_path)
+                max_h = BAR_HEIGHT - 20
+
+                if img.height() > max_h:
+                    factor = max(1, img.height() // max_h)
+                    img = img.subsample(factor, factor)
+
+                self.lab_logo_img = img
+                lab_logo_label = tk.Label(right_frame, image=img, bg="#800000", cursor="hand2")
+                lab_logo_label.image = img
+                vertical_padding = (BAR_HEIGHT - img.height()) // 2
+                lab_logo_label.pack(side=tk.LEFT, pady=vertical_padding)
+
+                def open_lab_website(event=None):
+                    webbrowser.open("https://www.epigen-bioinfolab.com/")
+
+                lab_logo_label.bind("<Button-1>", open_lab_website)
+
+            except Exception as e:
+                print(f"Could not load lab logo: {str(e)}")
+
+        lab_link = tk.Label(right_frame,
+                            text="Epigen-BioinfoLab",
+                            font=("Roboto", 12, "bold") if self.roboto_font else ("Helvetica", 12, "bold"),
+                            fg="white", bg="#800000", cursor="hand2")
+        lab_link.pack(side=tk.LEFT, padx=5, pady=(BAR_HEIGHT // 4, BAR_HEIGHT // 4))
+        lab_link.bind("<Button-1>", lambda e: webbrowser.open("https://www.epigen-bioinfolab.com/"))
+
+    def _setup_output_console(self):
+        console_frame = tk.Frame(self.main_frame, bd=1, relief=tk.SUNKEN)
+        console_frame.pack(fill=tk.BOTH, expand=False, padx=5, pady=(5, 0))
+
+        console_label = tk.Label(console_frame, text="Output Console", anchor=tk.W,
+                                 font=("Roboto", 10, "bold") if self.roboto_font else ("Helvetica", 10, "bold"))
+        console_label.pack(fill=tk.X, padx=5, pady=(2, 0))
+
+        self.output_text = tk.Text(console_frame, wrap=tk.WORD, height=12,
+                                   font=("Roboto", 9) if self.roboto_font else ("Courier", 9))
+        self.output_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=2, pady=2)
+
+        scrollbar = tk.Scrollbar(console_frame, command=self.output_text.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.output_text.config(yscrollcommand=scrollbar.set)
+        self.output_text.config(state=tk.DISABLED)
+
+        clear_btn = tk.Button(console_frame, text="Clear", command=self._clear_output,
+                              width=6, font=("Roboto", 8) if self.roboto_font else ("Helvetica", 8))
+        clear_btn.pack(side=tk.BOTTOM, padx=2, pady=2)
+
+    def _clear_output(self):
+        self.output_text.config(state=tk.NORMAL)
+        self.output_text.delete(1.0, tk.END)
         self.output_text.config(state=tk.DISABLED)
 
     def get_timestamp(self):
@@ -176,21 +225,24 @@ class ATACSeqPipeline:
         self.output_dir = tk.Entry(self.step1_frame, width=50)
         self.output_dir.grid(row=0, column=1, padx=10, pady=5)
         tk.Button(self.step1_frame, text="Browse", command=self.browse_output_dir, bg='grey').grid(row=0, column=2, padx=10, pady=5)
+        tk.Button(self.step1_frame, text="Create", command=self.create_new_output_dir, bg='lightblue').grid(row=0, column=3, padx=10, pady=5)
 
-        instruction_text_2 = " [Assign the Base Output Directory where all the corresponding results will be saved. ]"
+        instruction_text_2 = (
+            " [Assign the Base Output Directory where all the corresponding results will be saved. ]\n"
+            " \"Create\" allows a new output directory; \"Browse\" to use an existing directory alreay created"
+        )
         tk.Label(self.step1_frame, text=instruction_text_2, wraplength=600, justify=tk.LEFT, anchor="w",
                  font=(self.roboto_font, 9, 'italic')
-                 ).grid(row=1, column=0, columnspan=3, padx=10, pady=5, sticky="w")
+                 ).grid(row=1, column=0, columnspan=4, padx=10, pady=5, sticky="w")
 
         tk.Label(self.step1_frame, text="Raw Data Directory:", font=(self.roboto_font, 10, 'bold')).grid(row=2, column=0, sticky="w", padx=10, pady=5)
         self.raw_data_dir = tk.Entry(self.step1_frame, width=50)
         self.raw_data_dir.grid(row=2, column=1, padx=10, pady=5)
         tk.Button(self.step1_frame, text="Browse", command=self.browse_raw_data, bg='grey').grid(row=2, column=2, padx=10, pady=5)
-
         instruction_text_1 = "[ If 'Select specific samples' is unchecked, ALL FASTQ files in the RAW DATA DIRECTORY will be processed. ]"
         tk.Label(self.step1_frame, text=instruction_text_1, wraplength=600, justify=tk.LEFT, anchor="w",
                  font=(self.roboto_font, 9, 'italic')
-                 ).grid(row=3, column=0, columnspan=3, padx=10, pady=5, sticky="w")
+                 ).grid(row=3, column=0, columnspan=4, padx=10, pady=5, sticky="w")
 
         #selective sample selection
         self.select_samples_var = tk.BooleanVar(value=False)
@@ -234,6 +286,20 @@ class ATACSeqPipeline:
         if directory:
             self.output_dir.delete(0, tk.END)
             self.output_dir.insert(0, directory)
+
+    def create_new_output_dir(self):
+        base_path = filedialog.askdirectory(title="Select Base Path to Create Directory")
+        if base_path:
+            new_dir_name = simpledialog.askstring("New Directory", "Enter new directory name:")
+            if new_dir_name:
+                new_dir_path = os.path.join(base_path, new_dir_name)
+                try:
+                    os.makedirs(new_dir_path, exist_ok=True)
+                    self.output_dir.delete(0, tk.END)
+                    self.output_dir.insert(0, new_dir_path)
+                    self.update_output_gui(f"Created directory: {new_dir_path}\n")
+                except Exception as e:
+                    messagebox.showerror("Error", f"Could not create directory:\n{e}")
 
     def toggle_sample_selection(self):
         if self.select_samples_var.get():
@@ -321,8 +387,13 @@ class ATACSeqPipeline:
         self.sample_listbox_step2.grid(row=0, column=1, padx=10, pady=5)
 
         instruction_1 = (
+            "Please HOVER on this box and SCROLL to see more samples (if available)\n\n"
             "Samples auto-extracted from filenames.\n"
             "Format: SRRXXXXX (ignores _1/_2 suffixes).\n\n"
+            "A list of allowed sample name types detected by ChromAcS-\n"
+            "sample_1.fastq.gz / fq.gz;  sample_2.fastq.gz / fq.gz\n"
+            "sample_R1.fastq.gz / fq.gz; sample_R2.fasq.gz / fq.gz\n"
+            "sample_S1_L002_R1_001.fastq.gz/ fq.gz; sample_S1_L002_R2_001.fastq.gz/ fq.gz\n"
         )
 
         tk.Label(self.step2_frame, text=instruction_1, wraplength=600, justify=tk.LEFT, anchor="w",
@@ -773,9 +844,11 @@ class ATACSeqPipeline:
         self.params["step4"]["max_q_value"] = max_q
         self.params["step4"]["merged_output_name"] = self.merged_output_name_var.get().strip()
 
+        messagebox.showinfo("Step 4a Saved", "Genrich settings saved.")
+
         self.notebook.tab(4, state="normal")
         self.notebook.select(4)
-        messagebox.showinfo("Step 4a Saved", "Genrich settings saved.")
+
 
     def toggle_merged_output_field(self):
         if self.peak_type_choice.get() == "merged":
@@ -1046,7 +1119,7 @@ class ATACSeqPipeline:
         # motif enrichment module
         motif_info = (
             "After differential peak analysis, you can run Motif Enrichment to identify enriched TF motifs "
-            "You need to download suitable .meme file from JASPER manually"
+            "You need to download suitable .meme file from JASPAR manually"
         )
         tk.Label(
             frame, text=motif_info, wraplength=800, justify=tk.LEFT,
@@ -1866,7 +1939,7 @@ class ATACSeqPipeline:
             "Note: You can skip this Control section, if there is none\n"
             "Please keep in mind that these are not biological controls, rather technical controls\n"
             "Do NOT put baseline condition as control here\n\n"
-            "IMPORTANT: “Prove baseline and test condition accordingly\n"
+            "IMPORTANT: “Input the baseline and test conditions accordingly\n"
             "Think baseline as your reference, and test as the comparison group\n"
             "These labels can represent any two biological states — e.g.:\n"
             "Baseline = Lung tissue, Test = Kidney tissue\n"
@@ -2063,7 +2136,7 @@ class ATACSeqPipeline:
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,
-                    bufsize=1  # line-buffered
+                    bufsize=1
                 )
 
                 for line in proc.stdout:
@@ -2074,7 +2147,7 @@ class ATACSeqPipeline:
                 if exit_code == 0:
                     def on_success():
                         timestamp = self.get_timestamp()
-                        self.update_output_gui(f"✅ DiffBind analysis completed successfully! [{timestamp}]\n")
+                        self.update_output_gui(f"DiffBind analysis completed successfully! [{timestamp}]\n")
                         messagebox.showinfo(
                             "DiffBind Completed",
                             f"Results are in:\n{out_dir}"
@@ -2121,11 +2194,32 @@ class ATACSeqPipeline:
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    text=True
+                    text=True,
+                    bufsize=1
                 )
                 for line in proc.stdout:
                     self.root.after(0, lambda l=line: self.update_output_gui(l))
-                proc.wait()
+                exit_code = proc.wait()
+
+                if exit_code != 0:
+                    msg = f" Annotate DiffBind script failed with exit code {exit_code}\n"
+                    self.root.after(0, lambda: self.show_error_gui(msg))
+                    self.root.after(0, lambda: self.update_output_gui(msg))
+                    return
+
+                try:
+                    self._inject_fimo_peakids(
+                        annotated_dir=os.path.join(diffbind_dir, "Annotated_DiffBind"),
+                        fimo_bed_path=os.path.join(diffbind_dir, "consensus_peaks_for_fimo.bed"),
+                        output_column_name="peak_id"
+                    )
+
+                except Exception as e:
+                    err_msg = f"Failed injecting FIMO IDs: {e}\n"
+                    self.root.after(0, lambda: self.update_output_gui(err_msg))
+                    self.root.after(0, lambda: self.show_error_gui(err_msg))
+                    return
+
                 self.root.after(0, lambda: messagebox.showinfo(
                     "Success", "DiffBind annotation complete!"
                 ))
@@ -2133,6 +2227,154 @@ class ATACSeqPipeline:
                 self.root.after(0, lambda: self.show_error_gui(str(e)))
 
         threading.Thread(target=worker, daemon=True).start()
+
+    def _inject_fimo_peakids(self, annotated_dir, fimo_bed_path, output_column_name="peak_id"):
+        if not os.path.exists(annotated_dir):
+            raise FileNotFoundError(f"Annotated directory not found: {annotated_dir}")
+
+        if not os.path.exists(fimo_bed_path):
+            self.root.after(0, lambda: self.update_output_gui(f"FIMO bed not found: {fimo_bed_path}\n"))
+            return
+
+        fimo_df = pd.read_csv(
+            fimo_bed_path,
+            sep="\t",
+            header=None,
+            usecols=[0, 1, 2, 3],
+            names=["chrom", "start", "end", "peakID"],
+            dtype={"chrom": str, "start": int, "end": int, "peakID": str}
+        )
+
+        coord_map = defaultdict(list)
+        for _, row in fimo_df.iterrows():
+            chrom = row.chrom
+            start = row.start
+            end = row.end
+            pid = row.peakID
+            for ds in (-1, 0, 1):
+                for de in (-1, 0, 1):
+                    key = (chrom, start + ds, end + de)
+                    coord_map[key].append(pid)
+
+        for annotated_file in os.listdir(annotated_dir):
+            if not annotated_file.endswith("_annotated.tsv"):
+                continue
+            file_path = os.path.join(annotated_dir, annotated_file)
+            try:
+                ann_df = pd.read_csv(file_path, sep="\t", dtype=str)
+            except Exception as e:
+                self.root.after(0, lambda: self.update_output_gui(f"Failed reading {annotated_file}: {e}\n"))
+                continue
+
+            cols_lower = {c.lower(): c for c in ann_df.columns}
+            chr_col = next((cols_lower[n] for n in ("seqnames", "chr", "chrom", "chromosome") if n in cols_lower), None)
+            start_col = next((cols_lower[n] for n in ("start", "chromstart") if n in cols_lower), None)
+            end_col = next((cols_lower[n] for n in ("end", "chromend") if n in cols_lower), None)
+
+            if chr_col is None or start_col is None or end_col is None:
+                self.root.after(0, lambda: self.update_output_gui(
+                    f"Skipping {annotated_file}: missing chr/start/end columns\n"))
+                continue
+
+            fimo_ids = []
+            matched = 0
+            unmatched = 0
+            for _, row in ann_df.iterrows():
+                chrom = str(row[chr_col])
+                try:
+                    start = int(row[start_col])
+                    end = int(row[end_col])
+                except (ValueError, TypeError):
+                    fimo_ids.append(None)
+                    unmatched += 1
+                    continue
+
+                key = (chrom, start, end)
+                peakids = coord_map.get(key)
+                if not peakids:
+                    peakids = coord_map.get((chrom, start, end), None)
+
+                if peakids:
+                    unique_ids = sorted(set(peakids))
+                    fimo_ids.append(";".join(unique_ids))
+                    matched += 1
+                else:
+                    fimo_ids.append(None)
+                    unmatched += 1
+
+            colname = output_column_name
+            if colname in ann_df.columns:
+                ann_df[colname] = fimo_ids
+            else:
+                insert_pos = 3 if ann_df.shape[1] >= 3 else ann_df.shape[1]
+                ann_df.insert(insert_pos, colname, fimo_ids)
+
+            summary = f"{annotated_file}: matched {matched}, unmatched {unmatched}\n"
+            self.root.after(0, lambda s=summary: self.update_output_gui(s))
+
+            ann_df = self._merge_with_diffbind_noisq_metrics(annotated_df=ann_df, annotated_dir=annotated_dir,
+                                                             annotated_file=annotated_file, peakid_column=colname)
+
+            ann_df.to_csv(file_path, sep="\t", index=False)
+
+    def _merge_with_diffbind_noisq_metrics(self, annotated_df, annotated_dir, annotated_file, peakid_column="peak_id"):
+        ann_df = annotated_df
+        parent_dir = os.path.dirname(annotated_dir)
+        results_df = None
+        results_file = None
+
+        diffbind_results = os.path.join(parent_dir, "diffbind_results.csv")
+        if os.path.exists(diffbind_results):
+            results_file = diffbind_results
+            results_df = pd.read_csv(results_file)
+        else:
+            noisq_results = os.path.join(os.path.dirname(parent_dir), "noisq_results", "noisq_results.xlsx")
+            if os.path.exists(noisq_results):
+                results_file = noisq_results
+                results_df = pd.read_excel(results_file)
+
+        if results_df is None:
+            self.root.after(0, lambda: self.update_output_gui(
+                f"No diffbind/noisq results found to merge for {annotated_file}\n"))
+            return ann_df
+
+        peakid_col = None
+        for candidate in ("PeakID", "peak_id", "peakID"):
+            if candidate in results_df.columns:
+                peakid_col = candidate
+                break
+        if peakid_col is None:
+            self.root.after(0, lambda: self.update_output_gui(
+                f"Results file {os.path.basename(results_file)} lacks a peak ID column; skipping merge for {annotated_file}\n"))
+            return ann_df
+
+        other_cols = [c for c in results_df.columns if c != peakid_col]
+        last_six = other_cols[-6:] if len(other_cols) >= 6 else other_cols
+        subset = results_df[[peakid_col] + last_six].drop_duplicates()
+
+        ann_df["merge_key"] = ann_df[peakid_column].fillna("").str.split(";").str[0]
+
+        ann_df["merge_key"] = ann_df[peakid_column].fillna("").astype(str).str.split(";").str[0]
+        subset[peakid_col] = subset[peakid_col].astype(str)
+
+        subset = subset.rename(columns={peakid_col: "results_peak_id"})
+
+        merged = ann_df.merge(
+            subset,
+            left_on="merge_key",
+            right_on="results_peak_id",
+            how="left"
+        )
+
+        merged.drop(columns=["merge_key", "results_peak_id"], inplace=True, errors="ignore")
+
+        #reproting (optional)
+        matched = 0
+        if last_six:
+            matched = merged[last_six[0]].notna().sum()
+        #self.root.after(0, lambda: self.update_output_gui(f"{annotated_file}: merged {matched}/{len(ann_df)} rows from {os.path.basename(results_file)}\n"))
+
+        return merged
 
     # ======================  noiseq analysis logic =====================================================================
 
@@ -2317,7 +2559,7 @@ class ATACSeqPipeline:
                 proc.wait()
                 if proc.returncode == 0:
                     timestamp = self.get_timestamp()
-                    self.update_output_gui(f"✅ NOISeq analysis completed! [{timestamp}]\n")
+                    self.update_output_gui(f"NOISeq analysis completed! [{timestamp}]\n")
                     messagebox.showinfo("Success", f"Results saved to:\n{output_xlsx}")
                 else:
                     self.show_error_gui(f"NOISeq failed with exit code {proc.returncode}")
@@ -2349,14 +2591,40 @@ class ATACSeqPipeline:
                     cmd,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    text=True
+                    text=True,
+                    bufsize=1
                 )
                 for line in proc.stdout:
                     self.root.after(0, lambda l=line: self.update_output_gui(l))
-                proc.wait()
+                exit_code = proc.wait()
+
+                if exit_code != 0:
+                    msg = f" Annotate NOISeq script failed with exit code {exit_code}\n"
+                    self.root.after(0, lambda: self.show_error_gui(msg))
+                    self.root.after(0, lambda: self.update_output_gui(msg))
+                    return
+
+                # Post-process FIMO IDs injection
+                try:
+                    noisq_dir = os.path.join(base_dir, "noisq_results")
+                    self._inject_fimo_peakids(
+                        annotated_dir=os.path.join(noisq_dir, "Annotated_NOISeq"),
+                        fimo_bed_path=os.path.join(noisq_dir, "consensus_peaks_for_fimo.bed"),
+                        output_column_name="peak_id"
+                    )
+
+
+                except Exception as e:
+                    err_msg = f"Failed injecting FIMO IDs: {e}\n"
+                    self.root.after(0, lambda: self.update_output_gui(err_msg))
+                    self.root.after(0, lambda: self.show_error_gui(err_msg))
+                    return
+
                 self.root.after(0, lambda: messagebox.showinfo(
                     "Success", "NOISeq annotation complete!"
                 ))
+
+
             except Exception as e:
                 self.root.after(0, lambda: self.show_error_gui(str(e)))
 
@@ -2471,9 +2739,6 @@ class ATACSeqPipeline:
                         "Enrichment result files detected. Skipping analysis and going to plotting...\n")
 
                     self._update_output("Loading enrichment files...\n")
-                    #print("Trying to read:", up_enrichment_file)
-                    #print("File exists:", os.path.exists(up_enrichment_file))
-                    #print("File size:", os.path.getsize(up_enrichment_file))
 
                     try:
                         up_df = pd.read_csv(up_enrichment_file, sep='\t')
@@ -2532,14 +2797,6 @@ class ATACSeqPipeline:
                     diff_df[diff_df.columns[0]] = diff_df[diff_df.columns[0]].astype(str).str.strip('"').str.strip("'")
                     fimo_df['sequence_name'] = fimo_df['sequence_name'].astype(str).str.strip('"').str.strip("'")
                     bed_df['peak_id'] = bed_df['peak_id'].astype(str).str.strip('"').str.strip("'")
-
-                    #debug
-                    #print("\n=== PEAK ID FORMATS ===")
-                    #print("Sample BED peaks:", list(bed_df['peak_id'])[:10])
-                    #print("Sample FIMO peaks:", fimo_df['sequence_name'].unique()[:10])
-                    #print("Sample differential peaks:", diff_df[peakid_col].astype(str).unique()[:10])
-                    #print("Overlap between differential peaks and FIMO hits:", len(set(diff_df[peakid_col].astype(str)).intersection(set(fimo_df["sequence_name"]))))
-                    #print("Overlap between FIMO hits and BED peaks:", len(set(fimo_df['sequence_name']).intersection(set(bed_df['peak_id']))))
 
                     for group_name, group_peaks in [('up', up_peaks), ('down', down_peaks)]:
                         self._update_output(f"Calculating enrichment for {group_name}-regulated peaks...\n")
@@ -2783,7 +3040,8 @@ class ATACSeqPipeline:
             fimo_df = pd.read_csv(fimo_file, sep='\t')
             fimo_df.columns = [col.lstrip('#').strip() for col in fimo_df.columns]
 
-            fimo_df['peak_id'] = fimo_df['sequence name'].str.split('::').str[1]
+            fimo_df[['peak_id', 'coord_key']] = fimo_df['sequence name'].str.split('::', expand=True)
+            fimo_df['coord_key'] = fimo_df['coord_key'].str.replace('_', ':')
 
             analysis_type = "diffbind" if "diffbind" in diff_file.lower() else "noisq"
 
@@ -2797,7 +3055,6 @@ class ATACSeqPipeline:
                     gain_path = os.path.join(base_dir, "noisq_results", "Annotated_NOISeq", "gain_sites_annotated.tsv")
                     loss_path = os.path.join(base_dir, "noisq_results", "Annotated_NOISeq", "loss_sites_annotated.tsv")
 
-                # -1 for adjusting diffbind results (granges to bed)
                 try:
                     gain_df = pd.read_csv(gain_path, sep='\t')
                     loss_df = pd.read_csv(loss_path, sep='\t')
@@ -2837,49 +3094,52 @@ class ATACSeqPipeline:
                         self._update_output(f"No FIMO hits found for significant {output_suffix} motifs\n")
                         return
 
-                    #debug
-                    self._update_output(f"\nFirst few FIMO peaks for {output_suffix}:\n{str(motif_fimo['peak_id'].head())}\n")
-                    self._update_output(f"First few annotation peaks:\n{str(annotation_df['coord_key'].head())}\n")
-
-
                     merged = pd.merge(
                         motif_fimo,
                         annotation_df,
-                        left_on='peak_id',
+                        left_on='coord_key',
                         right_on='coord_key',
-                        how='left'
+                        how='left',
+                        indicator=True
                     )
 
-                    self._update_output(f"Merged {len(merged)} records for {output_suffix}\n")
-                    self._update_output(f"Merge success rate: {merged['coord_key'].notna().mean():.1%}\n")
+                    matched_fraction = (merged['_merge'] == 'both').mean()
+                    self._update_output(f"True annotation match rate: {matched_fraction:.1%}\n")
 
-                    def aggregate_genes(group):
+                    records = []
+                    for motif_name, grp in merged.groupby('pattern name', dropna=False):
                         gene_cols = ['SYMBOL', 'geneId', 'GENENAME', 'annotation', 'distanceToTSS']
-                        available_cols = [col for col in gene_cols if col in group.columns]
+                        available_gene_cols = [c for c in gene_cols if c in grp.columns]
+                        if available_gene_cols:
+                            genes_df = grp[available_gene_cols].drop_duplicates()
+                            genes = genes_df.to_dict('records')
+                        else:
+                            genes = []
 
-                        if not available_cols:
-                            return {
-                                'genes': [],
-                                'peak_count': group['peak_id'].nunique(),
-                                'peaks': group['peak_id'].unique().tolist()
+                        peaks = sorted(grp['peak_id'].dropna().unique().tolist())
+                        peak_count = len(peaks)
+
+                        records.append({
+                            'Motif': motif_name,
+                            'Annotations': {
+                                'genes': genes,
+                                'peak_count': peak_count,
+                                'peaks': peaks
                             }
+                        })
 
-                        genes = group[available_cols].drop_duplicates()
-                        return {
-                            'genes': genes.to_dict('records'),
-                            'peak_count': group['peak_id'].nunique(),
-                            'peaks': group['peak_id'].unique().tolist()
-                        }
-
-                    motif_annotations = merged.groupby('pattern name').apply(aggregate_genes).reset_index()
-                    motif_annotations.columns = ['Motif', 'Annotations']
+                    motif_annotations = pd.DataFrame(records)
 
                     final_df = pd.merge(
                         sig_motifs,
                         motif_annotations,
-                        on='Motif',
+                        left_on='Motif',
+                        right_on='Motif',
                         how='left'
                     )
+
+                    if 'Motif_Name' not in final_df.columns:
+                        final_df['Motif_Name'] = final_df['Motif']
 
                     output_file = os.path.join(motif_out_dir, f"motif_{output_suffix}_annotated.json")
                     final_df.to_json(output_file, orient='records', indent=2)
@@ -2911,7 +3171,6 @@ class ATACSeqPipeline:
 
         processed = []
         for motif in data:
-            # Extract gene information
             genes = [g for g in motif['Annotations']['genes'] if g['SYMBOL'] is not None]
             gene_count = len(genes)
             gene_symbols = [g['SYMBOL'] for g in genes if g['SYMBOL']]
@@ -2924,7 +3183,7 @@ class ATACSeqPipeline:
                 'Gene_Count': gene_count,
                 'Genes': gene_symbols,
                 'Peak_Count': motif['Annotations']['peak_count'],
-                'Top_Genes': ', '.join(list(set(gene_symbols))[:5])  #first 5 unique genes
+                'Top_Genes': ', '.join(list(set(gene_symbols))[:5])
             })
 
         return pd.DataFrame(processed)
@@ -3039,6 +3298,15 @@ class ATACSeqPipeline:
 
 def main():
     root = tk.Tk()
+
+    icon_path = resource_filename("chromacs", "assets/ChromAcS.png")
+    if os.path.exists(icon_path):
+        try:
+            img = tk.PhotoImage(file=icon_path)
+            root.tk.call('wm', 'iconphoto', root._w, img)
+        except Exception as e:
+            print(f"Could not set app icon: {e}")
+
     app = ATACSeqPipeline(root)
     root.mainloop()
 
