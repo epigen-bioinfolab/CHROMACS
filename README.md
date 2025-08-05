@@ -14,7 +14,7 @@
 
 ## 📖 About
 
-ChromAcS (***Chrom***atin ***Ac***cessibility Analysis ***S***uit) provides a streamlined, GUI-based workflow for analyzing ATAC-seq data. Shown below are the major analysis steps which have been incorporated with several related dependencies in a hierarchical and modular manner designed for the best user experience and easy navigation:
+ChromAcS (***Chrom***atin ***Ac***cessibility Analysis ***S***uite) provides a streamlined, GUI-based workflow for analyzing ATAC-seq data. Shown below are the major analysis steps which have been incorporated with several related dependencies in a hierarchical and modular manner designed for the best user experience and easy navigation:
 
 - Quality Control (`FastQC, MultiQC`) ==> of both raw reads and trimmed reads;
 
