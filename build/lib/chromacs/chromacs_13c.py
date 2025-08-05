@@ -3217,7 +3217,7 @@ class ATACSeqPipeline:
         sns.barplot(data=top_motifs, x='Gene_Count', y='Motif_Name', hue='Motif_Name',
                     palette='viridis', dodge=False, legend=False)
 
-        plt.title(f'Top {top_n} {title} Motifs by Number of Target Genes')
+        plt.title(f'Top {top_n} Motifs by Number of Target Genes in {title} peaks')
         plt.xlabel('Number of Target Genes')
         plt.ylabel('Motif')
         plt.tight_layout()
@@ -3261,7 +3261,7 @@ class ATACSeqPipeline:
 
         plt.figure(figsize=(10, 8))
         sns.barplot(x=gene_counts.values, y=gene_counts.index, palette='rocket')
-        plt.title(f'Most Frequent Target Genes in {title} Motifs')
+        plt.title(f'Most Frequent Target Genes in Motifs for {title} peaks')
         plt.xlabel('Number of Motifs Binding This Gene')
         plt.ylabel('Gene Symbol')
         plt.tight_layout()

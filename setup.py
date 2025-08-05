@@ -20,7 +20,7 @@ setup(
     entry_points={
     'console_scripts': [
         'chromacs=chromacs.chromacs_13c:main',
-        'chromacs-overlap-expr=chromacs.chromacs_overlap_expr:main',
+        'chromacs-addon=chromacs.chromacs_addon:main',
         ],
     },
 )

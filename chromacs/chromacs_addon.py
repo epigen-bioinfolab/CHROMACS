@@ -7,6 +7,8 @@ import shutil
 import sys
 import argparse
 from pathlib import Path
+from pkg_resources import resource_filename
+import webbrowser
 
 class ATACSeqAnalyzer:
     def __init__(self, root):
@@ -34,31 +36,79 @@ class ATACSeqAnalyzer:
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
     def _make_title_bar(self):
-        BAR_HEIGHT = 40
-        self.title_bar = tk.Frame(self.root, bg="maroon", height=BAR_HEIGHT)
+        BAR_HEIGHT = 90
+        self.title_bar = tk.Frame(self.root, bg="#800000", height=BAR_HEIGHT)
         self.title_bar.pack(fill=tk.X)
         self.title_bar.pack_propagate(False)
 
-        script_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
-        icon_path = os.path.join(script_dir, "ChromAcS.png")
-        if os.path.exists(icon_path):
-            try:
-                img = tk.PhotoImage(file=icon_path)
-                # Scale down if too tall
-                max_h = BAR_HEIGHT - 8
-                if img.height() > max_h:
-                    factor = img.height() // max_h + 1
-                    img = img.subsample(factor, factor)
-                self.logo_img = img
-                logo_label = tk.Label(self.title_bar, image=self.logo_img, bg="maroon")
-                logo_label.image = img  # Keep reference
-                logo_label.pack(side=tk.LEFT, padx=5, pady=4)
-            except Exception as e:
-                print(f"Could not load logo: {str(e)}")
+        # Left side: ChromAcS logo + title
+        left_frame = tk.Frame(self.title_bar, bg="#800000")
+        left_frame.pack(side=tk.LEFT, padx=10, pady=0)
+        left_frame.pack_propagate(True)
 
-        title_font = ("Helvetica", 12, "bold")
-        tk.Label(self.title_bar, text=self.root.title(),
-                 bg="maroon", fg="white", font=title_font).pack(side=tk.LEFT, padx=5)
+        chromacs_logo_path = resource_filename("chromacs", "assets/ChromAcS.png")
+        if os.path.exists(chromacs_logo_path):
+            try:
+                img = tk.PhotoImage(file=chromacs_logo_path)
+                max_h = BAR_HEIGHT - 20
+                if img.height() > max_h:
+                    factor = max(1, img.height() // max_h)
+                    img = img.subsample(factor, factor)
+
+                self.chromacs_logo_img = img
+                logo_label = tk.Label(left_frame, image=img, bg="#800000", cursor="hand2")
+                logo_label.image = img
+                vertical_padding = (BAR_HEIGHT - img.height()) // 2
+                logo_label.pack(side=tk.LEFT, pady=vertical_padding)
+
+                def open_chromacs_site(event=None):
+                    webbrowser.open("https://github.com/epigen-bioinfolab/CHROMACS/tree/main")
+
+                logo_label.bind("<Button-1>", open_chromacs_site)
+
+            except Exception as e:
+                print(f"Could not load ChromAcS logo: {str(e)}")
+
+        title_font = ("Helvetica", 16, "bold")
+        title_label = tk.Label(left_frame,
+                               text="ChromAcS+ Additional Analysis Toolkit",
+                               bg="#800000", fg="white", font=title_font)
+        title_label.pack(side=tk.LEFT, padx=5, pady=(BAR_HEIGHT // 4, BAR_HEIGHT // 4))
+
+        # Right side: Lab logo and link
+        right_frame = tk.Frame(self.title_bar, bg="#800000")
+        right_frame.pack(side=tk.RIGHT, padx=10, pady=0)
+        right_frame.pack_propagate(True)
+
+        lab_logo_path = resource_filename("chromacs", "assets/lab_logo.png")
+        if os.path.exists(lab_logo_path):
+            try:
+                img = tk.PhotoImage(file=lab_logo_path)
+                max_h = BAR_HEIGHT - 20
+                if img.height() > max_h:
+                    factor = max(1, img.height() // max_h)
+                    img = img.subsample(factor, factor)
+
+                self.lab_logo_img = img
+                lab_logo_label = tk.Label(right_frame, image=img, bg="#800000", cursor="hand2")
+                lab_logo_label.image = img
+                vertical_padding = (BAR_HEIGHT - img.height()) // 2
+                lab_logo_label.pack(side=tk.LEFT, pady=vertical_padding)
+
+                def open_lab_website(event=None):
+                    webbrowser.open("https://www.epigen-bioinfolab.com/")
+
+                lab_logo_label.bind("<Button-1>", open_lab_website)
+
+            except Exception as e:
+                print(f"Could not load lab logo: {str(e)}")
+
+        lab_link = tk.Label(right_frame,
+                            text="Epigen-BioinfoLab",
+                            font=("Helvetica", 12, "bold"),
+                            fg="white", bg="#800000", cursor="hand2")
+        lab_link.pack(side=tk.LEFT, padx=5, pady=(BAR_HEIGHT // 4, BAR_HEIGHT // 4))
+        lab_link.bind("<Button-1>", lambda e: webbrowser.open("https://www.epigen-bioinfolab.com/"))
 
     # ------------------------------------------
     # Peak Overlap Analysis Tab
@@ -341,7 +391,7 @@ def cli_overlap(args):
     return 0
 
 def main():
-    parser = argparse.ArgumentParser(prog="chromacs-overlap-expr",
+    parser = argparse.ArgumentParser(prog="chromacs-addon",
                                      description="Overlap / expression helper. If no subcommand given, launches GUI.")
     sub = parser.add_subparsers(dest="cmd")
 
@@ -358,6 +408,14 @@ def main():
         sys.exit(return_code)
     else:
         root = tk.Tk()
+        icon_path = resource_filename("chromacs", "assets/ChromAcS.png")
+        if os.path.exists(icon_path):
+            try:
+                img = tk.PhotoImage(file=icon_path)
+                root.tk.call('wm', 'iconphoto', root._w, img)
+            except Exception as e:
+                print(f"Could not set app icon: {e}")
+
         app = ATACSeqAnalyzer(root)
         root.mainloop()
 
