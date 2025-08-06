@@ -85,7 +85,7 @@ chromacs
 
 #### Step 4a (Add-on): Launch the overlapper-expression application :
 ```bash
-chromacs-overlap-expr
+chromacs-addon
 ```
 
 
