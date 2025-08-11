@@ -41,7 +41,7 @@ Before installing ChromAcS, ensure you have the following:
 
 - **For Windows users:** [Windows Subsystem for Linux (Ubuntu)](https://learn.microsoft.com/en-us/windows/wsl/install)
   
-- **For Linux users:** Tested on [Ubuntu](https://ubuntu.com/download) and [Fedora](https://getfedora.org/); but should work in any other linux terminal including Mac OS.
+- **For Linux users:** Tested on [Ubuntu](https://ubuntu.com/download) and [Fedora](https://getfedora.org/); but should work in any other linux terminal including MacOS.
   
 - **Git (optional):** [Install Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
   
