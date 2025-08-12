@@ -1051,91 +1051,115 @@ class ATACSeqPipeline:
 
     def setup_step5_ui(self):
         frame = self.step5_frame
+        frame.grid_columnconfigure(0, weight=1)
 
-        for i in range(3):
-            frame.grid_columnconfigure(i, weight=1)
-        frame.grid_rowconfigure(0, weight=1)
+        padx = 20
+        pady_section = 10
+        pady_element = 5
 
-        instruction_1 = (
+        instruction_frame = ttk.LabelFrame(frame, text=" Pipeline Instructions ", padding=(padx, pady_element))
+        instruction_frame.grid(row=0, column=0, padx=padx, pady=pady_section, sticky="ew")
+
+        instruction_text = (
             "Click 'Run Pipeline' to generate peak files with annotation.\n"
-            "If you are running ChromAcS for the first time, it may take longer due to reference genome setup and indexing.\n\n"
-            "- FastQC, MultiQC, Trimmed data, Aligned BAM files, and Coverage files will be stored under the base output directory.\n"
-            "- Peak files will be saved in the 'peak_files' folder.\n"
-            "- Annotated peaks will be in 'Annotated_Peaks' inside 'peak_files'."
+            "First-time runs may take longer due to genome setup and indexing.\n\n"
+            "Output locations:\n"
+            "- FastQC, MultiQC, Trimmed data: base output directory\n"
+            "- Aligned BAM files and coverage: bam_output folder\n"
+            "- Peak files: peak_files folder\n"
+            "- Annotated peaks: Annotated_Peaks subfolder\n\n"
+            "You MUST run this pipeline at least once before you perform the Differential, Motif, Footprinting Analyis"
         )
-        tk.Label(
-            frame, text=instruction_1, wraplength=800, justify=tk.LEFT,
-            anchor="center", font=(self.roboto_font, 10, 'bold')
-        ).grid(row=0, column=1, padx=20, pady=10, sticky="ew")
+        ttk.Label(
+            instruction_frame, text=instruction_text, justify=tk.LEFT,
+            font=(self.roboto_font, 10)
+        ).pack(anchor="w", fill=tk.X)
 
-        button_frame = tk.Frame(frame)
-        button_frame.grid(row=1, column=1, pady=10)
+        button_frame = ttk.Frame(frame)
+        button_frame.grid(row=1, column=0, pady=pady_section)
 
-        tk.Button(button_frame, text="Back", command=lambda: self.notebook.select(3), bg='salmon'
-                  ).pack(side=tk.LEFT, padx=20)
-        tk.Button(button_frame, text="Run Pipeline", command=self.run_pipeline, bg="yellow green"
-                  ).pack(side=tk.LEFT, padx=20)
+        ttk.Button(
+            button_frame, text="← Back", command=lambda: self.notebook.select(3),
+            style='TButton'
+        ).pack(side=tk.LEFT, padx=padx // 2)
 
-        #diffbind module
-        diffbind_info = (
-            "After peak calling is complete, you can run DiffBind to perform differential binding analysis "
-            "based on experimental conditions."
-        )
-        tk.Label(
-            frame, text=diffbind_info, wraplength=800, justify=tk.LEFT,
-            anchor="center", font=(self.roboto_font, 9, 'italic')
-        ).grid(row=2, column=1, padx=20, pady=(20, 5), sticky="ew")
+        ttk.Button(
+            button_frame, text="Run Pipeline", command=self.run_pipeline,
+            style='Accent.TButton'
+        ).pack(side=tk.LEFT, padx=padx // 2)
 
-        diffbind_btn_frame = tk.Frame(frame)
-        diffbind_btn_frame.grid(row=3, column=1, pady=10)
-        self.diffbind_btn = tk.Button(
-            diffbind_btn_frame, text="Run DiffBind Analysis", bg='orange',
-            command=self.launch_diffbind_config, state=tk.NORMAL
-        )
-        self.diffbind_btn.pack()
+        modules_notebook = ttk.Notebook(frame)
+        modules_notebook.grid(row=2, column=0, padx=padx, pady=pady_section, sticky="nsew")
 
-        #noiseq module
-        noisq_info = (
-            "If you do not have biological replicates, you can use NOISeq instead of DiffBind.\n"
-            "NOISeq performs a simulation-based differential analysis on a peak count matrix."
-        )
-        tk.Label(
-            frame, text=noisq_info, wraplength=800, justify=tk.LEFT,
-            anchor="center", font=(self.roboto_font, 9, 'italic')
-        ).grid(row=4, column=1, padx=20, pady=(10, 5), sticky="ew")
+        style = ttk.Style()
+        style.configure('TNotebook', background='#f0f0f0')
+        style.configure('TNotebook.Tab', font=(self.roboto_font, 9, 'bold'), padding=[10, 5])
 
-        # NOISeq button (centered below)
-        noisq_btn_frame = tk.Frame(frame)
-        noisq_btn_frame.grid(row=5, column=1, pady=(5, 20))
-        self.noisq_btn = tk.Button(
-            noisq_btn_frame, text="Run NOISeq Analysis (No Replicates)", bg='light blue',
+        # differential analysis tab
+        diff_tab = ttk.Frame(modules_notebook)
+        modules_notebook.add(diff_tab, text="Differential Analysis")
+
+        # DiffBind module
+        diffbind_frame = ttk.LabelFrame(diff_tab, text="DiffBind", padding=(padx, pady_element))
+        diffbind_frame.pack(fill=tk.X, pady=pady_element)
+        ttk.Label(
+            diffbind_frame,
+            text="Perform differential binding analysis for multiple replicates per condition",
+            font=(self.roboto_font, 9)
+        ).pack(anchor="w")
+        ttk.Button(
+            diffbind_frame, text="Configure DiffBind",
+            command=self.launch_diffbind_config
+        ).pack(pady=pady_element)
+
+        # NOISeq module
+        noiseq_frame = ttk.LabelFrame(diff_tab, text="NOISeq", padding=(padx, pady_element))
+        noiseq_frame.pack(fill=tk.X, pady=pady_element)
+        ttk.Label(
+            noiseq_frame,
+            text="Simulation-based differential analysis for experiments without replicates",
+            font=(self.roboto_font, 9)
+        ).pack(anchor="w")
+        ttk.Button(
+            noiseq_frame, text="Configure NOISeq",
             command=self.launch_noisq_config
-        )
-        self.noisq_btn.pack()
+        ).pack(pady=pady_element)
 
-        for i in range(5):
-            frame.grid_rowconfigure(i, weight=1)
+        # motif analysis tab
+        motif_tab = ttk.Frame(modules_notebook)
+        modules_notebook.add(motif_tab, text="Motif Analysis")
 
-        # motif enrichment module
-        motif_info = (
-            "After differential peak analysis, you can run Motif Enrichment to identify enriched TF motifs "
-            "You need to download suitable .meme file from JASPAR manually"
-        )
-        tk.Label(
-            frame, text=motif_info, wraplength=800, justify=tk.LEFT,
-            anchor="center", font=(self.roboto_font, 9, 'italic')
-        ).grid(row=6, column=1, padx=20, pady=(10, 5), sticky="ew")
-
-        motif_btn_frame = tk.Frame(frame)
-        motif_btn_frame.grid(row=7, column=1, pady=(5, 20))
-        self.motif_btn = tk.Button(
-            motif_btn_frame, text="Run Motif Enrichment", bg='medium orchid',
+        # Motif enrichment
+        motif_frame = ttk.LabelFrame(motif_tab, text="Motif Enrichment", padding=(padx, pady_element))
+        motif_frame.pack(fill=tk.X, pady=pady_element)
+        ttk.Label(
+            motif_frame,
+            text="Identify enriched transcription factor motifs (requires JASPAR .meme file)",
+            font=(self.roboto_font, 9)
+        ).pack(anchor="w")
+        ttk.Button(
+            motif_frame, text="Configure Motif Enrichment",
             command=self.launch_motif_module
-        )
-        self.motif_btn.pack()
+        ).pack(pady=pady_element)
 
-        for i in range(8):
-            frame.grid_rowconfigure(i, weight=1)
+        # Footprinting analysis
+        footprint_frame = ttk.LabelFrame(motif_tab, text="Footprinting Analysis", padding=(padx, pady_element))
+        footprint_frame.pack(fill=tk.X, pady=pady_element)
+        ttk.Label(
+            footprint_frame,
+            text="Detect differential TF binding footprints using TOBIAS",
+            font=(self.roboto_font, 9)
+        ).pack(anchor="w")
+        ttk.Button(
+            footprint_frame, text="Configure Footprinting",
+            command=self.run_motif_footprinting
+        ).pack(pady=pady_element)
+
+
+        frame.grid_rowconfigure(0, weight=0)
+        frame.grid_rowconfigure(1, weight=0)
+        frame.grid_rowconfigure(2, weight=1)
+        frame.grid_rowconfigure(3, weight=0)
 
 
 # ======================= Final Run Pipeline ===========================================================================
@@ -3268,6 +3292,592 @@ class ATACSeqPipeline:
         plt.savefig(output_path)
         plt.close()
 
+    # ==================== motif footprinting (TOBIAS) ================================================================
+
+    def run_motif_footprinting(self):
+        self.footprint_window = tk.Toplevel(self.root)
+        self.footprint_window.title("TOBIAS Motif Footprinting Configuration")
+        self.footprint_window.geometry("800x600")
+
+        base_dir = self.params["step1"]["base_output_dir"]
+        bam_dir = os.path.join(base_dir, "bam_output")
+        peak_dir = os.path.join(base_dir, "peak_files")
+
+        genome_version = self.params["step3"]["genome_version"]
+        ref_dir = self.params["step3"]["ref_dir"]
+        genome_fasta = os.path.join(ref_dir, f"{genome_version}.fa")
+
+        file_frame = tk.Frame(self.footprint_window)
+        file_frame.pack(pady=10)
+
+        # baseline bam
+        tk.Label(file_frame, text="Baseline BAM Files (Please use name.sorted.bam):", font=(self.roboto_font, 10, 'bold')).grid(row=0, column=0, sticky='w')
+        self.baseline_bam_list = tk.Listbox(file_frame, height=4, width=60)
+        self.baseline_bam_list.grid(row=1, column=0, padx=5)
+        tk.Button(file_frame, text="Add Files",
+                  command=lambda: self.browse_files(
+                      self.baseline_bam_list,
+                      [("BAM files", "*name.sorted.bam"), ("All files", "*.*")],
+                      initialdir=bam_dir)
+                  ).grid(row=1, column=1)
+
+        # test bam
+        tk.Label(file_frame, text="Test BAM Files (Please use name.sorted.bam):", font=(self.roboto_font, 10, 'bold')).grid(row=2, column=0, sticky='w')
+        self.test_bam_list = tk.Listbox(file_frame, height=4, width=60)
+        self.test_bam_list.grid(row=3, column=0, padx=5)
+        tk.Button(file_frame, text="Add Files",
+                  command=lambda: self.browse_files(
+                      self.test_bam_list,
+                      [("BAM files", "*name.sorted.bam"), ("All files", "*.*")],
+                      initialdir=bam_dir)
+                  ).grid(row=3, column=1)
+
+        # baseline peak
+        tk.Label(file_frame, text="Baseline Peak Files:", font=(self.roboto_font, 10, 'bold')).grid(row=4, column=0, sticky='w')
+        self.baseline_peak_list = tk.Listbox(file_frame, height=4, width=60)
+        self.baseline_peak_list.grid(row=5, column=0, padx=5)
+        tk.Button(file_frame, text="Add Files",
+                  command=lambda: self.browse_files(
+                      self.baseline_peak_list,
+                      [("Peak files", "*.peak *.narrowPeak"), ("BED files", "*.bed"), ("All files", "*.*")],
+                      initialdir=peak_dir)
+                  ).grid(row=5, column=1)
+
+        # test peak
+        tk.Label(file_frame, text="Test Peak Files:", font=(self.roboto_font, 10, 'bold')).grid(row=6, column=0, sticky='w')
+        self.test_peak_list = tk.Listbox(file_frame, height=4, width=60)
+        self.test_peak_list.grid(row=7, column=0, padx=5)
+        tk.Button(file_frame, text="Add Files",
+                  command=lambda: self.browse_files(
+                      self.test_peak_list,
+                      [("Peak files", "*.peak *.narrowPeak"), ("BED files", "*.bed"), ("All files", "*.*")],
+                      initialdir=peak_dir)
+                  ).grid(row=7, column=1)
+
+        # meme motif file (jasper or similar)
+        tk.Label(file_frame, text="Motif File (.meme):", font=(self.roboto_font, 10, 'bold')).grid(row=8, column=0, sticky='w')
+        self.motif_entry = tk.Entry(file_frame, width=60)
+        self.motif_entry.grid(row=9, column=0, padx=5)
+        tk.Button(file_frame, text="Browse",
+                  command=lambda: self.browse_file(
+                      self.motif_entry,
+                      [("MEME files", "*.meme *.txt"), ("All files", "*.*")])
+                  ).grid(row=9, column=1)
+
+
+        opt_frame = tk.Frame(self.footprint_window)
+        opt_frame.pack(pady=10)
+
+        # output
+        out_frame = tk.Frame(self.footprint_window)
+        out_frame.pack(pady=10)
+
+        default_out = os.path.join(base_dir, "motif_footprinting")
+        tk.Label(out_frame, text="Output Directory:").grid(row=0, column=0)
+        self.output_dir_entry = tk.Entry(out_frame, width=60)
+        self.output_dir_entry.insert(0, default_out)
+        self.output_dir_entry.grid(row=0, column=1)
+        tk.Button(out_frame, text="Browse",
+                  command=lambda: self.browse_directory(self.output_dir_entry, initialdir=base_dir)
+                  ).grid(row=0, column=2)
+
+
+        tk.Button(self.footprint_window, text="Run Footprinting",
+                  command=self.execute_footprinting, bg="light green").pack(pady=20)
+
+    def browse_file(self, entry, filetypes, initialdir=None):
+        temp = tk.Toplevel(self.root)
+        temp.withdraw()
+
+        f = filedialog.askopenfilename(
+            parent=temp,
+            filetypes=filetypes,
+            initialdir=initialdir if initialdir and os.path.exists(initialdir) else None
+        )
+        temp.destroy()
+
+        if f:
+            entry.delete(0, tk.END)
+            entry.insert(0, f)
+
+    def browse_files(self, listbox, filetypes, initialdir=None):
+        temp = tk.Toplevel(self.root)
+        temp.withdraw()
+        files = filedialog.askopenfilenames(
+            parent=temp,
+            filetypes=filetypes,
+            initialdir=initialdir if initialdir and os.path.exists(initialdir) else None
+        )
+        temp.destroy()
+
+        for f in files:
+            listbox.insert(tk.END, f)
+
+    def browse_directory(self, entry, initialdir=None):
+        temp = tk.Toplevel(self.root)
+        temp.withdraw()
+
+        d = filedialog.askdirectory(
+            parent=temp,
+            initialdir=initialdir if initialdir and os.path.exists(initialdir) else None
+        )
+        temp.destroy()
+
+        if d:
+            entry.delete(0, tk.END)
+            entry.insert(0, d)
+
+    def execute_footprinting(self):
+        baseline_bams = [self.baseline_bam_list.get(i) for i in range(self.baseline_bam_list.size())]
+        test_bams = [self.test_bam_list.get(i) for i in range(self.test_bam_list.size())]
+        baseline_peaks = [self.baseline_peak_list.get(i) for i in range(self.baseline_peak_list.size())]
+        test_peaks = [self.test_peak_list.get(i) for i in range(self.test_peak_list.size())]
+        motif_file = self.motif_entry.get()
+        output_dir = self.output_dir_entry.get()
+
+        if not baseline_bams or not test_bams:
+            self.show_error_gui("Please select BAM files for both conditions")
+            return
+        if not baseline_peaks or not test_peaks:
+            self.show_error_gui("Please select peaks BED files for both conditions")
+            return
+        if not motif_file:
+            self.show_error_gui("Please select a motif file")
+            return
+
+        genome_fasta = os.path.join(self.params["step3"]["ref_dir"], f"{self.params['step3']['genome_version']}.fa")
+        if not os.path.exists(genome_fasta):
+            self.show_error_gui(f"Genome FASTA not found at: {genome_fasta}")
+            return
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        threading.Thread(
+            target=self._run_footprinting_analysis,
+            args=(baseline_bams, test_bams, baseline_peaks, test_peaks, genome_fasta, motif_file, output_dir),
+            daemon=True
+        ).start()
+
+    def _run_footprinting_analysis(self, baseline_bams, test_bams, baseline_peaks, test_peaks, genome_fasta, motif_file,
+                                   output_dir):
+        try:
+            self._update_output("\nStarting Motif Footprinting with TOBIAS...\n")
+
+            # BAM processing
+            self._update_output("Processing and deduplicating BAM files...\n")
+            baseline_processed = self._process_bam_files(baseline_bams, "baseline", output_dir)
+            test_processed = self._process_bam_files(test_bams, "test", output_dir)
+
+            # Process peaks
+            self._update_output("Preparing peaks files...\n")
+            baseline_merged_peaks = self._merge_peaks_if_needed(baseline_peaks, output_dir, "baseline")
+            test_merged_peaks = self._merge_peaks_if_needed(test_peaks, output_dir, "test")
+            consensus_peaks = self._prepare_peaks_files(baseline_merged_peaks, test_merged_peaks, output_dir)
+
+            # ATACorrect
+            self._update_output("Running TOBIAS ATACorrect...\n")
+            baseline_corrected = self._run_atacorrect(baseline_processed, baseline_merged_peaks, genome_fasta,
+                                                      os.path.join(output_dir, "baseline_corrected"))
+            test_corrected = self._run_atacorrect(test_processed, test_merged_peaks, genome_fasta,
+                                                  os.path.join(output_dir, "test_corrected"))
+
+            # Footprint scores
+            self._update_output("Calculating footprint scores...\n")
+            baseline_scores = os.path.join(output_dir, "baseline_scores.bw")
+            test_scores = os.path.join(output_dir, "test_scores.bw")
+            baseline_scores = self._calculate_scores(baseline_corrected, baseline_merged_peaks, baseline_scores)
+           test_scores = self._calculate_scores(test_corrected, test_merged_peaks, test_scores)
+
+            # BINDetect
+            self._update_output("Running differential footprint detection...\n")
+            bindetect_dir = os.path.join(output_dir, "bindetect_results")
+            bindetect_success = self._run_bindetect(
+                motif_file,
+                [baseline_scores, test_scores],
+                consensus_peaks,
+                genome_fasta,
+                bindetect_dir
+            )
+
+            if not bindetect_success:
+                raise RuntimeError("BINDetect failed")
+
+            baseline_corrected_dir = os.path.join(output_dir, "baseline_corrected")
+            test_corrected_dir = os.path.join(output_dir, "test_corrected")
+            bindetect_dir = os.path.join(output_dir, "bindetect_results")
+
+            # aggregate plot
+            # bigwig setup
+            def get_corrected_bw(corrected_dir, bam_files):
+                # for multi bam
+                if len(bam_files) > 1:
+                    merged_bw = os.path.join(corrected_dir, "merged.dedup_corrected.bw")
+                    if os.path.exists(merged_bw):
+                        return merged_bw
+                    raise FileNotFoundError(f"Merged corrected bigwig not found: {merged_bw}")
+
+                # for single bam
+                bam_filename = os.path.basename(bam_files[0])
+                single_bw = os.path.join(corrected_dir, f"{bam_filename}.dedup_corrected.bw")
+                if os.path.exists(single_bw):
+                    return single_bw
+
+                # fallback
+                possible_files = [f for f in os.listdir(corrected_dir) if f.endswith("_corrected.bw")]
+                if possible_files:
+                    return os.path.join(corrected_dir, possible_files[0])
+
+                raise FileNotFoundError(f"No corrected bigwig found in {corrected_dir}")
+
+            corrected_bw_list = [
+                get_corrected_bw(baseline_corrected_dir, baseline_bams),
+                get_corrected_bw(test_corrected_dir, test_bams)
+            ]
+
+            if not os.path.exists(bindetect_dir):
+                raise FileNotFoundError(f"BINDetect directory not found: {bindetect_dir}")
+
+            for bw in corrected_bw_list:
+                if not os.path.exists(bw):
+                    raise FileNotFoundError(f"Corrected bigwig file not found: {bw}")
+
+            self._generate_aggregate_plots(
+                corrected_bw_list,
+                bindetect_dir,
+                os.path.join(output_dir, "tobias_aggregate_plots")
+            )
+
+            self._update_output("\nMotif footprinting completed successfully!\n")
+            self.show_info_gui(f"Footprinting results saved to:\n{output_dir}")
+
+        except Exception as e:
+            self.show_error_gui(f"Footprinting failed: {str(e)}")
+            self._update_output(f"Error: {str(e)}\n")
+
+    def _prepare_peaks_files(self, baseline_bed, test_bed, output_dir):
+        consensus_file = os.path.join(output_dir, "consensus_peaks.bed")
+
+        baseline_df = pd.read_csv(baseline_bed, sep='\t', header=None)
+        test_df = pd.read_csv(test_bed, sep='\t', header=None)
+
+        combined = pd.concat([baseline_df, test_df])
+        combined = combined.sort_values([0, 1])
+
+        temp_file = os.path.join(output_dir, "combined_peaks.tmp.bed")
+        combined.to_csv(temp_file, sep='\t', header=False, index=False)
+
+        cmd = f"bedtools merge -i {temp_file} > {consensus_file}"
+        subprocess.run(cmd, shell=True, check=True)
+
+        os.remove(temp_file)
+
+        return consensus_file
+
+    def _merge_peaks_if_needed(self, peak_files, output_dir, condition):
+        merged_file = os.path.join(output_dir, f"{condition}_merged_peaks.bed")
+
+        if len(peak_files) == 1:
+            shutil.copyfile(peak_files[0], merged_file)
+            return merged_file
+
+        dfs = []
+        for peak_file in peak_files:
+            dfs.append(pd.read_csv(peak_file, sep='\t', header=None))
+
+        combined = pd.concat(dfs).sort_values([0, 1, 2])
+
+        temp_file = os.path.join(output_dir, f"temp_{condition}_peaks.bed")
+        combined.to_csv(temp_file, sep='\t', header=False, index=False)
+
+        cmd = f"bedtools merge -i {temp_file} > {merged_file}"
+        subprocess.run(cmd, shell=True, check=True)
+        os.remove(temp_file)
+
+        return merged_file
+
+    def _process_bam_files(self, bam_files, condition, output_dir):
+        processed_dir = os.path.join(output_dir, f"{condition}_processed")
+        os.makedirs(processed_dir, exist_ok=True)
+
+        merged_bam_path = os.path.join(processed_dir, f"{condition}_merged.dedup.bam")
+        if len(bam_files) > 1 and os.path.exists(merged_bam_path) and os.path.exists(merged_bam_path + ".bai"):
+            self._update_output(f"Skipping BAM processing for '{condition}' — found existing merged BAM.\n")
+            return merged_bam_path
+
+        if len(bam_files) == 1:
+            dedup_bam_path = os.path.join(processed_dir, f"{os.path.basename(bam_files[0])}.dedup.bam")
+            if os.path.exists(dedup_bam_path) and os.path.exists(dedup_bam_path + ".bai"):
+                self._update_output(f"Skipping BAM processing for '{condition}' — found existing deduplicated BAM.\n")
+                return dedup_bam_path
+
+        dedup_bams = []
+        for bam in bam_files:
+            self._update_output(f"Processing BAM: {bam}\n")
+            fixmate_bam = os.path.join(processed_dir, f"temp_{os.path.basename(bam)}.fixmate.bam")
+            subprocess.run(["samtools", "fixmate", "-m", bam, fixmate_bam], check=True)
+
+            coord_sorted_bam = os.path.join(processed_dir, f"temp_{os.path.basename(bam)}.coord.sorted.bam")
+            subprocess.run(["samtools", "sort", "-o", coord_sorted_bam, fixmate_bam], check=True)
+
+            dedup_bam = os.path.join(processed_dir, f"{os.path.basename(bam)}.dedup.bam")
+            subprocess.run(["samtools", "markdup", "-r", coord_sorted_bam, dedup_bam], check=True)
+            subprocess.run(["samtools", "index", dedup_bam], check=True)
+
+            os.remove(fixmate_bam)
+            os.remove(coord_sorted_bam)
+
+            dedup_bams.append(dedup_bam)
+
+        if len(dedup_bams) > 1:
+            merged_bam = merged_bam_path
+            subprocess.run(["samtools", "merge", merged_bam] + dedup_bams, check=True)
+            subprocess.run(["samtools", "index", merged_bam], check=True)
+            for bam in dedup_bams:
+                os.remove(bam)
+                os.remove(bam + ".bai")
+            return merged_bam
+        else:
+            return dedup_bams[0]
+
+    def _run_atacorrect(self, bam_file, peaks_file, genome_fasta, output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+
+        bam_basename = os.path.basename(bam_file)
+        if bam_basename.endswith(".bam"):
+            bam_basename = bam_basename[:-4]
+
+        cmd = [
+            "TOBIAS", "ATACorrect",
+            "--bam", bam_file,
+            "--genome", genome_fasta,
+            "--peaks", peaks_file,
+            "--outdir", output_dir,
+            "--cores", str(self.params.get("threads", 4))
+        ]
+        self._update_output(f"Running ATACorrect for {bam_basename}...\n")
+        success = self.run_blocking_command_last(" ".join(cmd), show_output=True)
+
+        corrected_bw = os.path.join(output_dir, f"{bam_basename}_corrected.bw")
+
+        if not success or not os.path.exists(corrected_bw):
+            possible_outputs = [
+                os.path.join(output_dir, f"{bam_basename}_corrected.bw"),
+                os.path.join(output_dir, "corrected.bw"),
+                os.path.join(output_dir, f"{bam_basename}.corrected.bw")
+            ]
+
+            for possible_output in possible_outputs:
+                if os.path.exists(possible_output):
+                    corrected_bw = possible_output
+                    break
+            else:
+                raise RuntimeError(
+                    f"ATACorrect failed to generate expected output file. Checked: {possible_outputs}\n"
+                    f"Command was: {' '.join(cmd)}"
+                )
+
+        return corrected_bw
+
+    def _calculate_scores(self, signal_bw, regions_bed, output_bw):
+        if not os.path.exists(signal_bw):
+            dirname = os.path.dirname(signal_bw)
+            basename = os.path.basename(signal_bw)
+
+            possible_inputs = [signal_bw]
+            if basename == "corrected.bw":
+                possible_inputs.extend([
+                    os.path.join(dirname, f.replace(".bam", "_corrected.bw"))
+                    for f in os.listdir(dirname)
+                    if f.endswith(".bam")
+                ])
+
+            for possible_input in possible_inputs:
+                if os.path.exists(possible_input):
+                    signal_bw = possible_input
+                    break
+            else:
+                raise RuntimeError(f"Input signal file not found: {signal_bw}")
+
+        cmd = [
+            "TOBIAS", "FootprintScores",
+            "--signal", signal_bw,
+            "--regions", regions_bed,
+            "--output", output_bw,
+            "--cores", str(self.params.get("threads", 4))
+        ]
+        success = self.run_blocking_command(" ".join(cmd), show_output=False)
+
+        if not success or not os.path.exists(output_bw):
+            raise RuntimeError(f"FootprintScores failed to generate {output_bw}")
+
+        return output_bw
+
+    def _run_bindetect(self, motifs_file, score_bws, regions_bed, genome_fasta, output_dir):
+        os.makedirs(output_dir, exist_ok=True)
+        cmd = [
+            "TOBIAS", "BINDetect",
+            "--motifs", motifs_file,
+            "--signals", *score_bws,
+            "--peaks", regions_bed,
+            "--genome", genome_fasta,
+            "--outdir", output_dir,
+            "--cores", str(self.params.get("threads", 4)),
+            "--cond_names", "baseline", "test"
+        ]
+        success = self.run_blocking_command_list(cmd)
+        if success:
+            self._update_output("Motif footprinting completed successfully.\n")
+        return success
+
+    def _generate_aggregate_plots(self, corrected_bw_list, bindetect_dir, output_dir):
+        try:
+            results_file = os.path.join(bindetect_dir, "bindetect_results.xlsx")
+            if not os.path.exists(results_file):
+                raise FileNotFoundError(f"BINDetect results file not found at {results_file}")
+
+            df = pd.read_excel(results_file)
+            available_motifs = df['output_prefix'].tolist()
+
+            plot_params = self._get_aggregate_plot_params(available_motifs)
+            if plot_params is None:
+                self._update_output("Skipping aggregate plot generation\n")
+                return
+
+            os.makedirs(output_dir, exist_ok=True)
+
+            for bw in corrected_bw_list:
+                if not os.path.exists(bw):
+                    raise FileNotFoundError(f"Corrected bigwig file not found: {bw}")
+
+            if plot_params['use_custom']:
+                top_motifs = plot_params['selected_motifs']
+                self._update_output(f"Plotting user-selected motifs: {', '.join(top_motifs)}\n")
+            else:
+                df = df[pd.to_numeric(df['baseline_test_pvalue'], errors='coerce').notna()]
+                df = df[df['baseline_test_change'].notna()]
+                df['rank'] = (df['baseline_test_pvalue'].rank(ascending=True) +
+                              df['baseline_test_change'].abs().rank(ascending=False))
+                top_motifs = df.sort_values('rank').head(plot_params['top_n'])['output_prefix'].tolist()
+                self._update_output(f"Plotting top {plot_params['top_n']} motifs\n")
+
+            if not top_motifs:
+                raise ValueError("No valid motifs found for plotting")
+
+            motif_beds = []
+            for motif in top_motifs:
+                motif_bed = os.path.join(bindetect_dir, motif, "beds", f"{motif}_all.bed")
+                if os.path.exists(motif_bed):
+                    motif_beds.append(motif_bed)
+                else:
+                    self._update_output(f"Warning: BED file not found for {motif}\n")
+
+            if not motif_beds:
+                raise RuntimeError("No motif BED files found for top motifs")
+
+            cmd = [
+                "TOBIAS", "PlotAggregate",
+                "--TFBS", *motif_beds,
+                "--signals", *corrected_bw_list,  # Using corrected bigwigs here
+                "--output", os.path.join(output_dir, "aggregate_plots.pdf"),
+                "--share_y", "both",
+                "--plot_boundaries",
+                "--signal_labels", "baseline", "test"  # Add labels for clarity
+            ]
+
+            self._update_output(f"Running: {' '.join(cmd)}\n")
+            success = self.run_blocking_command(" ".join(cmd), show_output=False)
+
+            if not success:
+                raise RuntimeError("PlotAggregate command failed")
+
+            expected_plot = os.path.join(output_dir, "aggregate_plots.pdf")
+            if not os.path.exists(expected_plot):
+                raise FileNotFoundError(f"Expected output plot not found at {expected_plot}")
+
+            self._update_output("✅ Aggregate plots generated successfully using corrected signals\n")
+
+        except Exception as e:
+            self._update_output(f"Error generating aggregate plots: {str(e)}\n")
+            raise
+
+    def _get_aggregate_plot_params(self, available_motifs):
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Aggregate Plot Configuration")
+        dialog.geometry("600x400")
+
+        params = {
+            'top_n': tk.IntVar(value=10),
+            'selected_motifs': [],
+            'use_custom': tk.BooleanVar(value=False)
+        }
+
+        frame = tk.Frame(dialog)
+        frame.pack(pady=20, padx=20, fill=tk.BOTH, expand=True)
+
+        # Option 1: Top N motifs
+        top_n_frame = tk.Frame(frame)
+        top_n_frame.pack(fill=tk.X, pady=5)
+
+        tk.Radiobutton(
+            top_n_frame, text="Plot top N motifs:",
+            variable=params['use_custom'], value=False
+        ).pack(side=tk.LEFT)
+
+        tk.Spinbox(
+            top_n_frame, from_=1, to=50, textvariable=params['top_n'], width=5
+        ).pack(side=tk.LEFT, padx=10)
+
+        # Option 2: Custom motifs
+        custom_frame = tk.Frame(frame)
+        custom_frame.pack(fill=tk.BOTH, expand=True, pady=5)
+
+        tk.Radiobutton(
+            custom_frame, text="Plot specific motifs:",
+            variable=params['use_custom'], value=True
+        ).pack(anchor=tk.W)
+
+        list_frame = tk.Frame(custom_frame)
+        list_frame.pack(fill=tk.BOTH, expand=True)
+
+        scrollbar = tk.Scrollbar(list_frame)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        motif_listbox = tk.Listbox(
+            list_frame,
+            selectmode=tk.MULTIPLE,
+            yscrollcommand=scrollbar.set,
+            height=8
+        )
+        motif_listbox.pack(fill=tk.BOTH, expand=True)
+        scrollbar.config(command=motif_listbox.yview)
+
+        for motif in sorted(available_motifs):
+            motif_listbox.insert(tk.END, motif)
+
+        btn_frame = tk.Frame(dialog)
+        btn_frame.pack(pady=10)
+
+        result = None
+
+        def on_ok():
+            nonlocal result
+            if params['use_custom'].get() and not motif_listbox.curselection():
+                self.show_error_gui("Please select motifs or choose top N option")
+                return
+
+            result = {
+                'top_n': params['top_n'].get(),
+                'selected_motifs': [motif_listbox.get(i) for i in motif_listbox.curselection()],
+                'use_custom': params['use_custom'].get()
+            }
+            dialog.destroy()
+
+        tk.Button(btn_frame, text="OK", command=on_ok).pack(side=tk.LEFT, padx=10)
+        tk.Button(btn_frame, text="Cancel", command=lambda: dialog.destroy()).pack(side=tk.LEFT)
+
+        dialog.grab_set()
+        dialog.wait_window()
+        return result
 
     # ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ #
 
@@ -3300,6 +3910,54 @@ class ATACSeqPipeline:
             return False
 
         return True
+
+    def run_blocking_command_list(self, cmd_list): # for a list of arguments
+        try:
+            process = subprocess.Popen(
+                cmd_list,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True
+            )
+            stdout, stderr = process.communicate()
+            if stdout:
+                self._update_output(stdout)
+            if stderr:
+                self._update_output(stderr)
+            return process.returncode == 0
+        except Exception as e:
+            self._update_output(f"Command failed: {str(e)}\n")
+            return False
+
+    def run_blocking_command_last(self, command, show_output=True): # all logs at last
+        try:
+            process = subprocess.Popen(
+                command,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1
+            )
+
+            full_output = []
+            while True:
+                output = process.stdout.readline()
+                if output == '' and process.poll() is not None:
+                    break
+                if output:
+                    full_output.append(output)
+
+            returncode = process.wait()
+
+            if show_output and full_output:
+                self._update_output("\n".join(full_output) + "\n")
+
+            return returncode == 0
+
+        except Exception as e:
+            self._update_output(f"Command execution failed: {str(e)}\n")
+            return False
 
     def update_output_gui(self, text):
         self.root.after(0, self._update_output, text)

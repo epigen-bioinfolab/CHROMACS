@@ -28,9 +28,11 @@ ChromAcS (***Chrom***atin ***Ac***cessibility Analysis ***S***uite) provides a s
 
 - Differential Peak Analysis (`DiffBind or NOISeq`) ==> employs Diffbind to visualize differential studies and also generates essential up- and downgraded regions; includes annotation of those regions as well; in absence of biological replicates, users can opt for NOISeq which allows the same differential studies (however, if you have more than one biological replicates, it is recommended to use Diffbind)
 
-- Motif Enrichment Analysis (`MEME Suite (FIMO)`) ==> performs transcription factor motif enrichment on differential peak sets using a user-provided .meme file (e.g., from JASPAR). For significant motif hits, it further annotates predicted motif-to-gene associations, linking enriched motifs to nearby genes.
+- Motif Enrichment Analysis (`MEME Suite (FIMO)`) ==> performs transcription factor motif enrichment on differential peak sets using a user-provided .meme file (e.g., from JASPAR [https://jaspar.elixir.no/]). For significant motif hits, it further annotates predicted motif-to-gene associations, linking enriched motifs to nearby genes.
 
-- Peak Overlap and Expression Data Overlap  (`BEDTools`) ==> provided as a separate add-on (chromacs-overlap-expr), this utility overlaps user-supplied BED files with ChromAcS peak results to identify shared genomic regions. Also integrates expression data (e.g., RNA-seq) by matching identifiers, enabling the user to relate chromatin accessibility peaks to gene expression profiles.
+- Motif Footprinting (`TOBIAS`) ==> uses TOBIAS to process both single- or multiple replicate samples allowing footprinting across two different conditions. It involves signal correction (ATACorrect), footprint score calculation, differential footprint detection (BINDetect), along with visualization of aggregate plots of selected motifs with condition-specific support. 
+
+- Peak Overlap and Expression Data Overlap  (`BEDTools`) ==> provided as a separate add-on (chromacs-addon), this utility overlaps user-supplied BED files with ChromAcS peak results to identify shared genomic regions. Also integrates expression data (e.g., RNA-seq) by matching identifiers, enabling the user to relate chromatin accessibility peaks to gene expression profiles.
 
 
 Designed to assist both beginners and experienced users in analyzing chromatin accessibility with minimal command-line usage
@@ -46,7 +48,6 @@ Before installing ChromAcS, ensure you have the following:
 - **Git (optional):** [Install Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
   
 - **Conda:** [Install Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
-
 
 ## 📥 Installation
 
@@ -83,7 +84,7 @@ pip install .
 chromacs
 ```
 
-#### Step 4a (Add-on): Launch the overlapper-expression application :
+#### Step 4a (Add-on): Launch the ChromAcS-AddOn: Additional Analysis Toolkit :
 ```bash
 chromacs-addon
 ```
@@ -91,7 +92,7 @@ chromacs-addon
 
 ## Acknowledgements
 
-- FastQC, MultiQC, Trim Galore, bowtie2, MACS3, Genrich, ChIPseeker, DiffBind, NOISeq, deepTools, MEME Suite; along with their dependencies
+- FastQC, MultiQC, Trim Galore, bowtie2, MACS3, Genrich, ChIPseeker, DiffBind, NOISeq, deepTools, MEME Suite, TOBIAS; along with their dependencies
 - Bioconda, Conda-Forge community, Python Software Foundation and the Python community
 
 

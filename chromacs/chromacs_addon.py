@@ -13,7 +13,7 @@ import webbrowser
 class ATACSeqAnalyzer:
     def __init__(self, root):
         self.root = root
-        self.root.title("ChromAcS+ Additional Analysis Toolkit")
+        self.root.title("ChromAcS-AddOn: Additional Analysis Toolkit")
         self.root.geometry("800x600")
         self.root.minsize(800, 600)
         
@@ -71,7 +71,7 @@ class ATACSeqAnalyzer:
 
         title_font = ("Helvetica", 16, "bold")
         title_label = tk.Label(left_frame,
-                               text="ChromAcS+ Additional Analysis Toolkit",
+                               text="ChromAcS-AddOn: Additional Analysis Toolkit",
                                bg="#800000", fg="white", font=title_font)
         title_label.pack(side=tk.LEFT, padx=5, pady=(BAR_HEIGHT // 4, BAR_HEIGHT // 4))
 
