@@ -1,3 +1,0 @@
-[console_scripts]
-chromacs = chromacs.chromacs_13c:main
-chromacs-addon = chromacs.chromacs_addon:main

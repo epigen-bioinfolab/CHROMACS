@@ -7,6 +7,12 @@
 
 > **An Automated, Flexible GUI for End-to-End Reproducible ATAC-seq Analysis Across Multiple Species**
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+![Python](https://img.shields.io/badge/Python-3.9%2B-blue)
+![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20MacOS-lightgrey)
+![Conda](https://img.shields.io/badge/Conda-Required-yellowgreen)
+[![GitHub release](https://img.shields.io/github/v/release/epigen-bioinfolab/CHROMACS)](https://github.com/epigen-bioinfolab/CHROMACS/releases)
+
   </div>
 </div>
 
