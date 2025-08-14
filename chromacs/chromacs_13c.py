@@ -102,7 +102,7 @@ class ATACSeqPipeline:
 
         self._setup_output_console()
 
-        self.status_bar = tk.Label(self.main_frame, text="ChromAcS v0.1.0", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = tk.Label(self.main_frame, text="ChromAcS v1.0.0", bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 5))
 
     def _make_title_bar(self):
@@ -2693,7 +2693,7 @@ class ATACSeqPipeline:
             tk.Button(
                 self.motif_window,
                 text="Browse",
-                command=lambda a=attr: self.browse_file(a)
+                command=lambda a=attr: self.browse_file_1(a)
             ).grid(row=row, column=2, padx=10, pady=5, sticky="e")
 
         genome_version = self.params["step3"].get("genome_version")
@@ -2945,7 +2945,7 @@ class ATACSeqPipeline:
 
         threading.Thread(target=worker, daemon=True).start()
 
-    def browse_file(self, attr):
+    def browse_file_1(self, attr):
         if attr == "motif_diff_file":
             filetypes = [
                 ("Differential Peaks", "*.csv *.xlsx"),
