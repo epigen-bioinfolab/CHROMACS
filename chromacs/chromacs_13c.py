@@ -102,7 +102,7 @@ class ATACSeqPipeline:
 
         self._setup_output_console()
 
-        self.status_bar = tk.Label(self.main_frame, text="ChromAcS v0.1", bd=1, relief=tk.SUNKEN, anchor=tk.W)
+        self.status_bar = tk.Label(self.main_frame, text="ChromAcS v0.1.0", bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status_bar.pack(side=tk.BOTTOM, fill=tk.X, padx=5, pady=(0, 5))
 
     def _make_title_bar(self):
@@ -3486,7 +3486,7 @@ class ATACSeqPipeline:
             baseline_scores = os.path.join(output_dir, "baseline_scores.bw")
             test_scores = os.path.join(output_dir, "test_scores.bw")
             baseline_scores = self._calculate_scores(baseline_corrected, baseline_merged_peaks, baseline_scores)
-           test_scores = self._calculate_scores(test_corrected, test_merged_peaks, test_scores)
+            test_scores = self._calculate_scores(test_corrected, test_merged_peaks, test_scores)
 
             # BINDetect
             self._update_output("Running differential footprint detection...\n")
