@@ -43,6 +43,11 @@ ChromAcS (***Chrom***atin ***Ac***cessibility Analysis ***S***uite) provides a s
 
 Designed to assist both beginners and experienced users in analyzing chromatin accessibility with minimal command-line usage
 
+## 📖 Documentation
+
+[Download ChromAcS User Manual (PDF)](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/User_Manual.pdf)
+
+
 ## ⚠️ Pre-requisites
 
 Before installing ChromAcS, ensure you have the following:
