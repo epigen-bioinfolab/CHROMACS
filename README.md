@@ -100,10 +100,9 @@ chromacs
 chromacs-addon
 ```
 
-
 ## 📬 Contact
 
-For any queries, please reach us at **epigen.bioinfolab@gmail.com**  
+For any queries and support, please reach us at **epigen.bioinfolab@gmail.com**  
 Visit our lab page: [www.epigen-bioinfolab.com](https://www.epigen-bioinfolab.com/)
 
 ## 🧩 Acknowledgements
