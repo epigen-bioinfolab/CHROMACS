@@ -110,6 +110,6 @@ Visit our lab page: [www.epigen-bioinfolab.com](https://www.epigen-bioinfolab.co
 
 - FastQC, MultiQC, Trim Galore, bowtie2, MACS3, Genrich, ChIPseeker, DiffBind, NOISeq, deepTools, MEME Suite, TOBIAS; along with their dependencies
 - Bioconda, Conda-Forge community, Python Software Foundation and the Python community.
-- 
+
 ## 📝 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
