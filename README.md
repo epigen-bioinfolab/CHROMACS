@@ -107,5 +107,11 @@ chromacs-addon
 - Bioconda, Conda-Forge community, Python Software Foundation and the Python community
 
 
+## 📬 Contact
+
+For any queries, please reach us at **epigen.bioinfolab@gmail.com**  
+Visit our lab page: [www.epigen-bioinfolab.com](https://www.epigen-bioinfolab.com/)
+
+
 ## 📝 License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
