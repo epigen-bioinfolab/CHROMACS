@@ -100,6 +100,60 @@ chromacs
 chromacs-addon
 ```
 
+### Option 2
+#### Windows 11 (with WSL + Ubuntu)
+1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Win11.zip)
+2. Unzip the file.
+3. Inside the folder `ChromAcS-Install-Win11`, double-click `ChromAcS-Install.bat`.
+Once complete, launch with:
+```bash
+chromacs
+chromacs-addon
+```
+#### Ubuntu Linux (x86-64 / AMD64)
+1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Ubuntu.zip)
+2. Unzip the file.
+3. Inside the unzipped folder `ChromAcS-Install-Ubuntu`, open a terminal and run:
+```bash
+chmod +x INSTALL_CHROMACS.sh
+./INSTALL_CHROMACS.sh
+```
+Run the following command to verify installation:
+```bash
+chmod +x chromacs-sanity-check.sh
+./chromacs-sanity-check.sh
+```
+If any package is missing, the script will report it. You can install these manually or use Option 1 for automatic installation.
+
+Alternative GUI-Based Install:
+1. After unzipping, open your `File Manager`.
+2. In the top menu bar, click the ☰ (three lines) icon. Select `Preferences`.
+3. Go to the `Behavior` tab.
+4. Under `Executable Text Files`, select `Ask each time`.
+5. Double-click `ChromAcS-Install-Linux.sh`. Choose Run in Terminal.
+
+Once complete, launch with:
+```bash
+chromacs
+chromacs-addon
+```
+
+#### Fedora Linux (x86-64 / AMD64)
+1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS_Install_Fedora.zip)
+2. Unzip the file.
+3. Inside the folder `ChromAcS_Install_Fedora`, run the following command in terminal.
+```bash
+chmod +x INSTALL_CHROMACS_LINUX.sh
+./INSTALL_CHROMACS_LINUX.sh
+```
+Once complete, launch with:
+```bash
+chromacs
+chromacs-addon
+```
+#### macOS (ARM64 / Apple Silicon)
+Automated installer will be released soon. For now, please use Option 1 (Step-by-step installation).
+
 ## 📬 Contact
 
 For any queries and support, please reach us at **epigen.bioinfolab@gmail.com**  
