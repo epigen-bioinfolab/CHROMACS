@@ -101,6 +101,7 @@ chromacs-addon
 ```
 
 ### Option 2
+After cloning/downloading the repository (completing Step 1 of Option 1),
 #### Windows 11 (with WSL + Ubuntu)
 1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Win11.zip)
 2. Unzip the file.
