@@ -21,13 +21,14 @@
 ## 📖 About
 
 ChromAcS (***Chrom***atin ***Ac***cessibility Analysis ***S***uite) provides a streamlined, GUI-based workflow for analyzing ATAC-seq data. Shown below are the major analysis steps which have been incorporated with several related dependencies in a hierarchical and modular manner designed for the best user experience and easy navigation:
+
 <p align="center">
-  <img src="chromacs/assets/pipeline.png" alt="ChromAcS Pipeline" width="700"/>
+  <img src="chromacs/assets/pipeline.png" alt="ChromAcS Pipeline" width="900"/>
 </p>
 
 
-
-- Peak Overlap and Expression Data Overlap  (`BEDTools`) ==> provided as a separate add-on (chromacs-addon), this utility overlaps user-supplied BED files with ChromAcS peak results to identify shared genomic regions. Also integrates expression data (e.g., RNA-seq) by matching identifiers, enabling the user to relate chromatin accessibility peaks to gene expression profiles.
+ChromAcS-AddOn
+- Peak Overlap and Expression Data Overlap  (`BEDTools`) ==> provided as a separate add-on (chromacs-addon), this utility overlaps user-supplied BED files with ChromAcS peak results to identify shared genomic regions. It also integrates expression data (e.g., RNA-seq) by matching identifiers, enabling the user to relate chromatin accessibility peaks to gene expression profiles.
 
 
 Designed to assist both beginners and experienced users in analyzing chromatin accessibility with minimal command-line usage
