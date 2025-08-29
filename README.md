@@ -25,21 +25,7 @@ ChromAcS (***Chrom***atin ***Ac***cessibility Analysis ***S***uite) provides a s
   <img src="chromacs/assets/pipeline.png" alt="ChromAcS Pipeline" width="700"/>
 </p>
 
-- Quality Control (`FastQC, MultiQC`) ==> of both raw reads and trimmed reads;
 
-- Trimming (`Trim Galore`) ==> optional (users can opt for working with raw data or their own trimmed data saved in "raw data directory");
-
-- Genome Alignment and Coverage Analysis(`bowtie2, SAMtools, deepTools`) ==> flexible with several model organisms and beyond, (uses Ensembl toplevel reference);
-
-- Peak Calling (`Genrich or MACS3`) ==> employes two different peak calling tools, users can select any of the two, with several options for parameter setup;
-
-- Peak Annotation (`ChIPseeker`) ==> builds own txDB by fetching GTF files from ENSEMBL, uses default orgdb from bioconductor;
-
-- Differential Peak Analysis (`DiffBind or NOISeq`) ==> employs Diffbind to visualize differential studies and also generates essential up- and downgraded regions; includes annotation of those regions as well; in absence of biological replicates, users can opt for NOISeq which allows the same differential studies (however, if you have more than one biological replicates, it is recommended to use Diffbind)
-
-- Motif Enrichment Analysis (`MEME Suite (FIMO)`) ==> performs transcription factor motif enrichment on differential peak sets using a user-provided .meme file (e.g., from JASPAR [https://jaspar.elixir.no/]). For significant motif hits, it further annotates predicted motif-to-gene associations, linking enriched motifs to nearby genes.
-
-- Motif Footprinting (`TOBIAS`) ==> uses TOBIAS to process both single- or multiple replicate samples allowing footprinting across two different conditions. It involves signal correction (ATACorrect), footprint score calculation, differential footprint detection (BINDetect), along with visualization of aggregate plots of selected motifs with condition-specific support. 
 
 - Peak Overlap and Expression Data Overlap  (`BEDTools`) ==> provided as a separate add-on (chromacs-addon), this utility overlaps user-supplied BED files with ChromAcS peak results to identify shared genomic regions. Also integrates expression data (e.g., RNA-seq) by matching identifiers, enabling the user to relate chromatin accessibility peaks to gene expression profiles.
 
