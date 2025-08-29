@@ -61,7 +61,7 @@ Before installing ChromAcS, ensure you have the following:
 - **Conda:** [Install Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
 
 ## 📥 Installation
-
+### Option 1
 #### Step 1: Clone the repository (Recommended) :
 ```bash
 git clone https://github.com/epigen-bioinfolab/CHROMACS.git
