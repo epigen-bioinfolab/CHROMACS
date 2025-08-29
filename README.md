@@ -143,7 +143,7 @@ chromacs
 chromacs-addon
 ```
 #### macOS (ARM64 / Apple Silicon)
-Automated installer will be released soon. For now, please use Option 1 (Step-by-step installation).
+The automated installer will be released soon. For now, please use Option 1 (Step-by-step installation).
 
 ## 📬 Contact
 
