@@ -51,7 +51,7 @@ Before installing ChromAcS, ensure you have the following:
 - **Conda:** [Install Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
 
 ## 📥 Installation
-### Option 1
+### Option 1 (Step-by-setp installation)
 #### Step 1: Clone the repository (Recommended) :
 ```bash
 git clone https://github.com/epigen-bioinfolab/CHROMACS.git
@@ -90,8 +90,8 @@ chromacs
 chromacs-addon
 ```
 
-### Option 2
-After cloning/downloading the repository (completing Step 1 of Option 1),
+### Option 2 (automated single click installation)
+
 #### Windows 11 (with WSL + Ubuntu)
 1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Win11.zip)
 2. Unzip the file.
