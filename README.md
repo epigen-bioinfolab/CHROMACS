@@ -96,10 +96,10 @@ chromacs-addon
 1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Win11.zip)
 2. Unzip the file.
 3. Inside the folder `ChromAcS-Install-Win11`, double-click `ChromAcS-Install.bat`.
-Once complete, launch with:
+Once complete, launch by typing the following command in the terminal.
 ```bash
-chromacs
-chromacs-addon
+chromacs        # for main program
+chromacs-addon  # for add-on
 ```
 #### Ubuntu Linux (x86-64 / AMD64)
 1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Ubuntu.zip)
@@ -121,12 +121,12 @@ Alternative GUI-Based Install:
 2. In the top menu bar, click the ☰ (three lines) icon. Select `Preferences`.
 3. Go to the `Behavior` tab.
 4. Under `Executable Text Files`, select `Ask each time`.
-5. Double-click `ChromAcS-Install-Linux.sh`. Choose Run in Terminal.
+5. Double-click `ChromAcS-Install-Linux.sh`. Choose `Run in Terminal`.
 
-Once complete, launch with:
+Once complete, launch by typing the following command in the terminal.
 ```bash
-chromacs
-chromacs-addon
+chromacs        # for main program
+chromacs-addon  # for add-on
 ```
 
 #### Fedora Linux (x86-64 / AMD64)
@@ -139,11 +139,23 @@ chmod +x INSTALL_CHROMACS_LINUX.sh
 ```
 Once complete, launch with:
 ```bash
-chromacs
-chromacs-addon
+chromacs        # for main program
+chromacs-addon  # for add-on
 ```
 #### macOS (ARM64 / Apple Silicon)
-The automated installer will be released soon. For now, please use Option 1 (Step-by-step installation).
+1. [Download Installer](right click on the INSTALL_CHROMACS.sh  file and select "open in terminal")
+2. Unzip the file.
+3a. Inside the folder `ChromAcS-Install-Mac`, double-click `ChromAcS-Install-MacOS.command`.
+3b. Alternaternatively,right click on the `INSTALL_CHROMACS.sh`  file and select `Open in Terminal`
+4. Once complete, launch the program by typing the following command in the terminal.
+```bash
+chromacs        # for main program
+chromacs-addon  # for main program
+```
+*NOTE*
+If you get "Apple cannot verify this app" warning, go to `System Preferences` → `Security & Privacy` → `General`.  Then  click on  `Open Anyway` button next to the warning message.
+
+Or, you can right-click on `ChromAcS-Install-MacOS.command`, select  `Open` from the menu, and click `Open` in the appeared security dialog.
 
 ## 📬 Contact
 
