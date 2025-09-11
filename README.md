@@ -1,5 +1,5 @@
 <div style="display: flex; align-items: center;">
-  <img src="chromacs/assets/ChromAcS.png" alt="ChromAcS Logo" width="120" style="margin-left: 40px;" />
+  <img src="chromacs/assets/pipeline.png" alt="ChromAcS Logo" width="120" style="margin-left: 40px;" />
 <div>
 
 
