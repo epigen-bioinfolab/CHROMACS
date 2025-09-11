@@ -1,5 +1,5 @@
 <div style="display: flex; align-items: center;">
-  <img src="chromacs/assets/ChromAcS.png" alt="ChromAcS Logo" width="120" style="margin-left: 40px;" />
+  <img src="chromacs/assets/ChromAcS_logo.png" alt="ChromAcS Logo" width="120" style="margin-left: 40px;" />
 <div>
 
 
@@ -99,8 +99,8 @@ chromacs-addon
 3. Inside the folder `ChromAcS-Install-Win11`, double-click `ChromAcS-Install.bat`.
 Once complete, launch by typing the following command in the terminal.
 ```bash
-chromacs        # for main program
-chromacs-addon  # for add-on
+chromacs        
+chromacs-addon  
 ```
 #### Ubuntu Linux (x86-64 / AMD64)
 1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Ubuntu.zip)
@@ -126,8 +126,8 @@ Alternative GUI-Based Install:
 
 Once complete, launch by typing the following command in the terminal.
 ```bash
-chromacs        # for main program
-chromacs-addon  # for add-on
+chromacs        
+chromacs-addon  
 ```
 
 #### Fedora Linux (x86-64 / AMD64)
@@ -140,18 +140,19 @@ chmod +x INSTALL_CHROMACS_LINUX.sh
 ```
 Once complete, launch by typing the following command in the terminal:
 ```bash
-chromacs        # for main program
-chromacs-addon  # for add-on
+chromacs        
+chromacs-addon  
 ```
 #### macOS (ARM64 / Apple Silicon)
 1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Mac.zip)
 2. Unzip the file.
+3. Main installation-
 3a. Inside the folder `ChromAcS-Install-Mac`, double-click `ChromAcS-Install-MacOS.command`.
 3b. Alternaternatively,right click on the `INSTALL_CHROMACS.sh`  file and select `Open in Terminal`
 4. Once complete, launch by typing the following command in the terminal.
 ```bash
-chromacs        # for main program
-chromacs-addon  # for main program
+chromacs        
+chromacs-addon  
 ```
 *NOTE*
 If you get "Apple cannot verify this app" warning, go to `System Preferences` → `Security & Privacy` → `General`.  Then  click on  `Open Anyway` button next to the warning message.
