@@ -137,7 +137,7 @@ chromacs-addon  # for add-on
 chmod +x INSTALL_CHROMACS_LINUX.sh
 ./INSTALL_CHROMACS_LINUX.sh
 ```
-Once complete, launch with:
+Once complete, launch by typing the following command in the terminal:
 ```bash
 chromacs        # for main program
 chromacs-addon  # for add-on
@@ -147,7 +147,7 @@ chromacs-addon  # for add-on
 2. Unzip the file.
 3a. Inside the folder `ChromAcS-Install-Mac`, double-click `ChromAcS-Install-MacOS.command`.
 3b. Alternaternatively,right click on the `INSTALL_CHROMACS.sh`  file and select `Open in Terminal`
-4. Once complete, launch the program by typing the following command in the terminal.
+4. Once complete, launch by typing the following command in the terminal.
 ```bash
 chromacs        # for main program
 chromacs-addon  # for main program
