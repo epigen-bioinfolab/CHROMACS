@@ -143,7 +143,7 @@ chromacs        # for main program
 chromacs-addon  # for add-on
 ```
 #### macOS (ARM64 / Apple Silicon)
-1. [Download Installer](right click on the INSTALL_CHROMACS.sh  file and select "open in terminal")
+1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Mac.zip)
 2. Unzip the file.
 3a. Inside the folder `ChromAcS-Install-Mac`, double-click `ChromAcS-Install-MacOS.command`.
 3b. Alternaternatively,right click on the `INSTALL_CHROMACS.sh`  file and select `Open in Terminal`
