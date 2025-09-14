@@ -97,8 +97,10 @@ chromacs-addon
 1. [Download Installer](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Win11.zip)
 2. Unzip the file.
 3. Inside the folder `ChromAcS-Install-Win11`, double-click `ChromAcS-Install.bat`.
-Once complete, launch by typing the following command in the terminal.
+Once complete, launch by typing the following command in the (Linux: e.g. Ubuntu) terminal.
 ```bash
+conda activate chromacs
+
 chromacs        
 chromacs-addon  
 ```
@@ -126,6 +128,8 @@ Alternative GUI-Based Install:
 
 Once complete, launch by typing the following command in the terminal.
 ```bash
+conda activate chromacs
+
 chromacs        
 chromacs-addon  
 ```
@@ -140,6 +144,7 @@ chmod +x INSTALL_CHROMACS_LINUX.sh
 ```
 Once complete, launch by typing the following command in the terminal:
 ```bash
+conda activate chromacs
 chromacs        
 chromacs-addon  
 ```
@@ -151,6 +156,7 @@ chromacs-addon
 3b. Alternaternatively,right click on the `INSTALL_CHROMACS.sh`  file and select `Open in Terminal`
 4. Once complete, launch by typing the following command in the terminal.
 ```bash
+conda activate chromacs
 chromacs        
 chromacs-addon  
 ```
