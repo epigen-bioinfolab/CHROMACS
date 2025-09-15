@@ -94,7 +94,7 @@ chromacs-addon
 ### Option 2 (automated single click installation)
 
 #### Windows 11 (with WSL + Ubuntu)
-1. [Download Installer](https://raw.githubusercontent.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Win11.zip)
+1. [Download Installer](https://raw.githubusercontent.com/epigen-bioinfolab/CHROMACS/main/Install/ChromAcS-Install-Win11.zip)
 2. Unzip the file.
 3. Inside the folder `ChromAcS-Install-Win11`, double-click `ChromAcS-Install.bat`.
 Once complete, launch by typing the following command in the (Linux: e.g. Ubuntu) terminal.
@@ -105,7 +105,7 @@ chromacs
 chromacs-addon  
 ```
 #### Ubuntu Linux (x86-64 / AMD64)
-1. [Download Installer](https://raw.githubusercontent.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Ubuntu.zip) 
+1. [Download Installer](https://raw.githubusercontent.com/epigen-bioinfolab/CHROMACS/main/Install/ChromAcS-Install-Ubuntu.zip) 
 2. Unzip the file.
 3. Inside the unzipped folder `ChromAcS-Install-Ubuntu`, open a terminal and run:
 ```bash
@@ -135,7 +135,7 @@ chromacs-addon
 ```
 
 #### Fedora Linux (x86-64 / AMD64)
-1. [Download Installer](https://raw.githubusercontent.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS_Install_Fedora.zip)
+1. [Download Installer](https://raw.githubusercontent.com/epigen-bioinfolab/CHROMACS/main/Install/ChromAcS_Install_Fedora.zip)
 2. Unzip the file.
 3. Inside the folder `ChromAcS_Install_Fedora`, run the following command in terminal.
 ```bash
@@ -149,7 +149,7 @@ chromacs
 chromacs-addon  
 ```
 #### macOS (ARM64 / Apple Silicon)
-1. [Download Installer](https://raw.githubusercontent.com/epigen-bioinfolab/CHROMACS/blob/main/Install/ChromAcS-Install-Mac.zip)
+1. [Download Installer](https://raw.githubusercontent.com/epigen-bioinfolab/CHROMACS/main/Install/ChromAcS-Install-Mac.zip)
 2. Unzip the file.
 3. Main installation-
 3a. Inside the folder `ChromAcS-Install-Mac`, double-click `ChromAcS-Install-MacOS.command`.
