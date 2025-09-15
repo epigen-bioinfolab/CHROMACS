@@ -40,7 +40,7 @@ Designed to assist both beginners and experienced users in analyzing chromatin a
 - **Complete pipeline** — from raw FASTQ to peak calling, QC, differential analysis, motif enrichment and footprinting, expression data integration, and so on.
 - **Multi-species support** — human, mouse, yeast, and more.
 - **Reproducible** — environment setup with Conda for consistency.
-- **Fast installation** — automated setup scripts for Windows, Mac, and Linux.
+- **Fast installation** — automated setup scripts and manual for Windows, Mac, and Linux.
 - **Customizable** — users can tweak parameters easily.
 - **Open-source** — will always be free and accessible for the community.
 
