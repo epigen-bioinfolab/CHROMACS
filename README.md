@@ -139,8 +139,6 @@ Alternative GUI-Based Install:
 
 Once complete, launch by typing the following command in the terminal.
 ```bash
-conda activate chromacs
-
 chromacs        
 chromacs-addon  
 ```
@@ -155,7 +153,6 @@ chmod +x INSTALL_CHROMACS_LINUX.sh
 ```
 Once complete, launch by typing the following command in the terminal:
 ```bash
-conda activate chromacs
 chromacs        
 chromacs-addon  
 ```
@@ -167,7 +164,6 @@ chromacs-addon
 3b. Alternaternatively,right click on the `INSTALL_CHROMACS.sh`  file and select `Open in Terminal`
 4. Once complete, launch by typing the following command in the terminal.
 ```bash
-conda activate chromacs
 chromacs        
 chromacs-addon  
 ```
