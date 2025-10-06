@@ -1,0 +1,27 @@
+# About the exclusion regions ("blacklists"):
+The blacklist regions of the genome are problematic regions which consistently exhibit abnormally
+high backgroud signal or artifactual read enrichment. Often arise from repetitive elements, low 
+mappability, or unannotated structural variants that cause reads to align incorrectly. To minimize
+the false positives and improve the biological interpretability of peak calling, such problematic
+regions are typically masked using genomic blacklists or exclusion regions.
+
+# How ChromAcS handles blacklists:
+ChromAcS allows users to specify a blacklist (BED) file during peak calling. However, this is 
+completely optional, as in many organisms the blacklists have not been well-curated or published.
+
+# How to assign the blacklists in ChromAcs:
+Users must download or obtain the blacklist file and save it in their local device in a certain
+directory. During step 4 (peak calling) of ChromAcs, users can browse and select the required 
+blacklist file.
+
+# !!! STRICT REQUIREMENT !!!
+If users use their custom blacklist (that is, apart from the ones uploaded in our GitHub page), 
+please ensure that the chromosome naming follows the ENSEMBL convention (that is , NO 'chr' should
+be there before the chromosome names).
+
+
+## Acknowledgement ##
+
+We are grateful to the Boyle-Lab (https://github.com/Boyle-Lab/Blacklist.git) for the resoursces 
+on blacklist, which we have slightly modified to match ChromAcS requirements. For GRCh38 blacklist, 
+we acknowledge https://www.encodeproject.org/files/ENCFF356LFX/.
