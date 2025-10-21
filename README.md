@@ -19,7 +19,7 @@
 
 
 
-## 📖 About
+## About
 
 ChromAcS (***Chrom***atin ***Ac***cessibility Analysis ***S***uite) provides a streamlined, GUI-based workflow for analyzing ATAC-seq data. Shown below are the major analysis steps which have been incorporated with several related dependencies in a hierarchical and modular manner designed for the best user experience and easy navigation:
 
@@ -45,12 +45,12 @@ Designed to assist both beginners and experienced users in analyzing chromatin a
 - **Open-source** — will always be free and accessible for the community.
 
 
-## 📖 Documentation
+## Documentation
 
 [Download ChromAcS User Manual (PDF)](https://github.com/epigen-bioinfolab/CHROMACS/blob/main/User_Manual.pdf)
 
 
-## ⚠️ Pre-requisites
+## Pre-requisites
 
 Before installing ChromAcS, ensure you have the following:
 
@@ -62,7 +62,7 @@ Before installing ChromAcS, ensure you have the following:
   
 - **Conda:** [Install Conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)
 
-## 📥 Installation
+## Installation
 ### Option 1 (Step-by-setp installation)
 #### Step 1: Clone the repository (Recommended) :
 ```bash
@@ -172,15 +172,42 @@ If you get "Apple cannot verify this app" warning, go to `System Preferences` �
 
 Otherwise, you can right-click on `ChromAcS-Install-MacOS.command`, select  `Open` from the menu, and click `Open` in the appeared security dialog.
 
-## 📬 Contact
+## Test Data
+
+The following public FASTQ datasets are used for demonstration and testing of this pipeline.
+
+### Baseline Samples
+| Sample | Read 1 | Read 2 |
+|:--------|:-------|:-------|
+| SRR5800658 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/008/SRR5800658/SRR5800658_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/008/SRR5800658/SRR5800658_2.fastq.gz) |
+| SRR5800657 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/007/SRR5800657/SRR5800657_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/007/SRR5800657/SRR5800657_2.fastq.gz) |
+| SRR5800659 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/009/SRR5800659/SRR5800659_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/009/SRR5800659/SRR5800659_2.fastq.gz) |
+
+### Test Samples
+| Sample | Read 1 | Read 2 |
+|:--------|:-------|:-------|
+| SRR5800661 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/001/SRR5800661/SRR5800661_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/001/SRR5800661/SRR5800661_2.fastq.gz) |
+| SRR5800660 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/000/SRR5800660/SRR5800660_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/000/SRR5800660/SRR5800660_2.fastq.gz) |
+| SRR5800662 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/002/SRR5800662/SRR5800662_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR580/002/SRR5800662/SRR5800662_2.fastq.gz) |
+
+### Technical Controls
+| Sample | Read 1 | Read 2 |
+|:--------|:-------|:-------|
+| SRR2927084 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR292/004/SRR2927084/SRR2927084_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR292/004/SRR2927084/SRR2927084_2.fastq.gz) |
+| SRR2927085 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR292/005/SRR2927085/SRR2927085_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR292/005/SRR2927085/SRR2927085_2.fastq.gz) |
+
+*These datasets are publicly available from the European Nucleotide Archive (ENA) and correspond ATAC-seq baseline, test, and control samples*
+
+
+## Contact
 
 For any queries and support, please reach us at **epigen.bioinfolab@gmail.com**  
 Visit our lab page: [www.epigen-bioinfolab.com](https://www.epigen-bioinfolab.com/)
 
-## 🧩 Acknowledgements
+## Acknowledgements
 
 - FastQC, MultiQC, Trim Galore, bowtie2, MACS3, Genrich, ChIPseeker, DiffBind, NOISeq, deepTools, MEME Suite, TOBIAS; along with their dependencies
 - Bioconda, Conda-Forge community, Python Software Foundation and the Python community.
 
-## 📝 License
+## License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
