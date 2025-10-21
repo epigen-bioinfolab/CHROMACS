@@ -196,7 +196,7 @@ The following public FASTQ datasets are used for demonstration and testing of th
 | SRR2927084 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR292/004/SRR2927084/SRR2927084_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR292/004/SRR2927084/SRR2927084_2.fastq.gz) |
 | SRR2927085 | [R1](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR292/005/SRR2927085/SRR2927085_1.fastq.gz) | [R2](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR292/005/SRR2927085/SRR2927085_2.fastq.gz) |
 
-*These datasets are publicly available from the European Nucleotide Archive (ENA) and correspond ATAC-seq baseline, test, and control samples*
+*These datasets are publicly available from the European Nucleotide Archive (ENA) and correspond to ATAC-seq baseline, test, and control samples. There are three replicates in the baseline and test samples. For an elaborate metadata, please view the test_data_links folder.*
 
 
 ## Contact
