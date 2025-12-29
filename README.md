@@ -204,6 +204,10 @@ The following public FASTQ datasets are used for demonstration and testing of th
 For any queries and support, please reach us at **epigen.bioinfolab@gmail.com**  
 Visit our lab page: [www.epigen-bioinfolab.com](https://www.epigen-bioinfolab.com/)
 
+## Stay Updated 
+We occasionally release updates to ChromAcS dependencies and features. 
+👉 [Subscribe Free for ChromAcS Updates](https://epigen-bioinfolab.github.io/CHROMACS/user_subs/) 
+
 ## Acknowledgements
 
 - FastQC, MultiQC, Trim Galore, bowtie2, MACS3, Genrich, ChIPseeker, DiffBind, NOISeq, deepTools, MEME Suite, TOBIAS; along with their dependencies
