@@ -206,7 +206,7 @@ Visit our lab page: [www.epigen-bioinfolab.com](https://www.epigen-bioinfolab.co
 
 ## Stay Updated 
 We occasionally release updates to ChromAcS dependencies and features. 
-👉 [Subscribe Free for ChromAcS Updates](https://epigen-bioinfolab.github.io/CHROMACS/user_subs/) 
+👉 [Subscribe Free for ChromAcS Updates](https://epigen-bioinfolab.github.io/CHROMACS/) 
 
 ## Acknowledgements
 
